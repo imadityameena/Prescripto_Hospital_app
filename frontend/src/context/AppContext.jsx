@@ -7,7 +7,10 @@ export const AppContext = createContext()
 const AppContextProvider = (props) => {
 
     const currencySymbol = '₹'
-    const backendUrl = import.meta.env.VITE_BACKEND_URL
+    const backendUrl = process.env.NODE_ENV !== "production"
+  ? "http://localhost:4000"  // Local
+  : "https://your-backend-service.onrender.com"; // Deployed
+
 
     const [doctors, setDoctors] = useState([])
     const [token, setToken] = useState(localStorage.getItem('token') ? localStorage.getItem('token') : '')
