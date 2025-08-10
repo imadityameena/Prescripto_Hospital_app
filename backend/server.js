@@ -17,7 +17,14 @@ connectCloudinary();
 
 // Middlewares
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:4000", // for local frontend
+    "https://prescripto-hospital-app.vercel.app" // replace with your actual frontend URL
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 
 // API Endpoints
 app.use("/api/user", userRouter);
