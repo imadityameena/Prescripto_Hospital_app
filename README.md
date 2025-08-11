@@ -29,8 +29,8 @@ Follow these instructions to set up the project locally.
 ### Installation
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/Prescripto-Hospital_Management_System.git
-   cd Prescripto-Hospital_Management_System
+   git clone https://github.com/imadityameena/Prescripto_Hospital_app
+   cd Prescripto_Hospital_app
 
 ## Install dependencies
 
@@ -75,17 +75,17 @@ Follow these instructions to set up the project locally.
 Hospital Management, MERN Stack, MongoDB, Express.js, React, Node.js, Healthcare App, Patient Records, Appointments.
 
 # Contributors
-Niraj Kumar [Github](https://github.com/meniraj07)
+Aditya Meena [Github](https://github.com/imadityameena)
 
 # Deployment Links
-[Prescripto Backend](https://prescriptobackend-4ylq.onrender.com)
+[Prescripto Backend](https://prescripto-hospital-backend.vercel.app)
 
-[Prescripto Patient Panel](https://prescripto-hospital-management-system.vercel.app/)
+[Prescripto Patient Panel](https://prescripto-hospital-app.vercel.app)
 
-[Prescripto Admin/Doctor Panel](https://prescripto-hospital-management-system-c29o.vercel.app/)
+[Prescripto Admin/Doctor Panel](https://prescripto-hospital-app-pxla.vercel.app)
 
 # Contact
-For any questions or feedback, please contact [Niraj Kumar](https://www.linkedin.com/in/nirajkumar-nk/)
+For any questions or feedback, please contact [](https://www.linkedin.com/in/aditya-meena-4a0217329)
 
 # License
 This project is licensed under the MIT License.
