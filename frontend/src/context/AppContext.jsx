@@ -9,7 +9,7 @@ const AppContextProvider = (props) => {
     const currencySymbol = '₹'
     const backendUrl = process.env.NODE_ENV !== "production"
   ? "http://localhost:4000"  // Local
-  : "https://prescripto-hospital-backend.vercel.app/"; // Deployed
+  : "https://prescripto-hospital-backend.vercel.app"; // Deployed
 
 
     const [doctors, setDoctors] = useState([])
