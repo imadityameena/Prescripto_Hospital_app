@@ -19,7 +19,7 @@ connectCloudinary();
 app.use(express.json());
 
 app.use(cors({
-  origin: "https://prescripto-hospital-app.vercel.app", // This explicitly allows your frontend to make requests
+  origin: ["https://prescripto-hospital-app.vercel.app","http://localhost:5173"], // This explicitly allows your frontend to make requests
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
