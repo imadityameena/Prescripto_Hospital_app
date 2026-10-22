@@ -1,5 +1,5 @@
 import axios from "axios";
-import { createContext, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 
@@ -14,6 +14,26 @@ const AdminContextProvider = (props) => {
     const [appointments, setAppointments] = useState([])
     const [doctors, setDoctors] = useState([])
     const [dashData, setDashData] = useState(false)
+
+    // Show the server's error message, and log out when the session has expired
+    useEffect(() => {
+        const id = axios.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                if (error.response?.data?.message) {
+                    error.message = error.response.data.message
+                }
+                const headers = error.config?.headers
+                const sentToken = headers?.get ? headers.get('aToken') : headers?.['aToken']
+                if (error.response?.status === 401 && sentToken) {
+                    localStorage.removeItem('aToken')
+                    setAToken('')
+                }
+                return Promise.reject(error)
+            }
+        )
+        return () => axios.interceptors.response.eject(id)
+    }, [])
 
     // Getting all Doctors data from Database using API
     const getAllDoctors = async () => {

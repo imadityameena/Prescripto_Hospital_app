@@ -15,11 +15,19 @@ const port = process.env.PORT || 4000;
 connectDB();
 connectCloudinary();
 
+// Trust the first proxy (Vercel) so rate limiting uses the real client IP
+app.set("trust proxy", 1);
+
 // Middlewares
 app.use(express.json());
 
 app.use(cors({
-  origin: ["https://prescripto-hospital-app.vercel.app","http://localhost:5173"], // This explicitly allows your frontend to make requests
+  origin: [
+    "https://prescripto-hospital-app.vercel.app",      // patient frontend
+    "https://prescripto-hospital-app-pxla.vercel.app", // admin/doctor panel
+    "http://localhost:5173",                           // patient frontend (local)
+    "http://localhost:5174",                           // admin panel (local)
+  ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));

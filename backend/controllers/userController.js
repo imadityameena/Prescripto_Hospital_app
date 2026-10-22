@@ -15,6 +15,14 @@ const razorpayInstance = new razorpay({
     key_secret: process.env.RAZORPAY_KEY_SECRET,
 })
 
+// Returns an error message if the user can't pay for this appointment, otherwise null
+const checkPayable = (appointmentData, userId) => {
+    if (!appointmentData || appointmentData.cancelled) return 'Appointment Cancelled or not found'
+    if (appointmentData.userId !== userId) return 'Unauthorized action'
+    if (appointmentData.payment) return 'Appointment already paid'
+    return null
+}
+
 // API to register user
 const registerUser = async (req, res) => {
 
@@ -48,7 +56,7 @@ const registerUser = async (req, res) => {
 
         const newUser = new userModel(userData)
         const user = await newUser.save()
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET)
+        const token = jwt.sign({ id: user._id, role: 'user' }, process.env.JWT_SECRET, { expiresIn: '7d' })
 
         res.json({ success: true, token })
 
@@ -66,13 +74,13 @@ const loginUser = async (req, res) => {
         const user = await userModel.findOne({ email })
 
         if (!user) {
-            return res.json({ success: false, message: "User does not exist" })
+            return res.json({ success: false, message: "Invalid credentials" })
         }
 
         const isMatch = await bcrypt.compare(password, user.password)
 
         if (isMatch) {
-            const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET)
+            const token = jwt.sign({ id: user._id, role: 'user' }, process.env.JWT_SECRET, { expiresIn: '7d' })
             res.json({ success: true, token })
         }
         else {
@@ -239,11 +247,12 @@ const listAppointment = async (req, res) => {
 const paymentRazorpay = async (req, res) => {
     try {
 
-        const { appointmentId } = req.body
+        const { userId, appointmentId } = req.body
         const appointmentData = await appointmentModel.findById(appointmentId)
 
-        if (!appointmentData || appointmentData.cancelled) {
-            return res.json({ success: false, message: 'Appointment Cancelled or not found' })
+        const error = checkPayable(appointmentData, userId)
+        if (error) {
+            return res.json({ success: false, message: error })
         }
 
         // creating options for razorpay payment
@@ -267,8 +276,13 @@ const paymentRazorpay = async (req, res) => {
 // API to verify payment of razorpay
 const verifyRazorpay = async (req, res) => {
     try {
-        const { razorpay_order_id } = req.body
+        const { userId, razorpay_order_id } = req.body
         const orderInfo = await razorpayInstance.orders.fetch(razorpay_order_id)
+
+        const appointmentData = await appointmentModel.findById(orderInfo.receipt)
+        if (!appointmentData || appointmentData.userId !== userId) {
+            return res.json({ success: false, message: 'Unauthorized action' })
+        }
 
         if (orderInfo.status === 'paid') {
             await appointmentModel.findByIdAndUpdate(orderInfo.receipt, { payment: true })
@@ -287,13 +301,14 @@ const verifyRazorpay = async (req, res) => {
 const paymentStripe = async (req, res) => {
     try {
 
-        const { appointmentId } = req.body
+        const { userId, appointmentId } = req.body
         const { origin } = req.headers
 
         const appointmentData = await appointmentModel.findById(appointmentId)
 
-        if (!appointmentData || appointmentData.cancelled) {
-            return res.json({ success: false, message: 'Appointment Cancelled or not found' })
+        const error = checkPayable(appointmentData, userId)
+        if (error) {
+            return res.json({ success: false, message: error })
         }
 
         const currency = process.env.CURRENCY
@@ -310,10 +325,12 @@ const paymentStripe = async (req, res) => {
         }]
 
         const session = await stripeInstance.checkout.sessions.create({
-            success_url: `${origin}/verify?success=true&appointmentId=${appointmentData._id}`,
+            // Stripe replaces {CHECKOUT_SESSION_ID} with the real session id
+            success_url: `${origin}/verify?success=true&appointmentId=${appointmentData._id}&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${origin}/verify?success=false&appointmentId=${appointmentData._id}`,
             line_items: line_items,
             mode: 'payment',
+            metadata: { appointmentId: appointmentData._id.toString() },
         })
 
         res.json({ success: true, session_url: session.url });
@@ -327,14 +344,25 @@ const paymentStripe = async (req, res) => {
 const verifyStripe = async (req, res) => {
     try {
 
-        const { appointmentId, success } = req.body
+        const { userId, appointmentId, sessionId } = req.body
 
-        if (success === "true") {
-            await appointmentModel.findByIdAndUpdate(appointmentId, { payment: true })
-            return res.json({ success: true, message: 'Payment Successful' })
+        if (!sessionId) {
+            return res.json({ success: false, message: 'Payment Failed' })
         }
 
-        res.json({ success: false, message: 'Payment Failed' })
+        const appointmentData = await appointmentModel.findById(appointmentId)
+        if (!appointmentData || appointmentData.userId !== userId) {
+            return res.json({ success: false, message: 'Unauthorized action' })
+        }
+
+        // Check with Stripe that this session was paid and belongs to this appointment
+        const session = await stripeInstance.checkout.sessions.retrieve(sessionId)
+        if (session.payment_status !== 'paid' || session.metadata?.appointmentId !== appointmentId) {
+            return res.json({ success: false, message: 'Payment Failed' })
+        }
+
+        await appointmentModel.findByIdAndUpdate(appointmentId, { payment: true })
+        res.json({ success: true, message: 'Payment Successful' })
 
     } catch (error) {
         console.log(error)

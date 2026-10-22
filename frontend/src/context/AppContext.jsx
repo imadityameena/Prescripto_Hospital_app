@@ -55,6 +55,28 @@ const AppContextProvider = (props) => {
 
     }
 
+
+    // Show the server's error message, and log out when the session has expired
+    useEffect(() => {
+        const id = axios.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                if (error.response?.data?.message) {
+                    error.message = error.response.data.message
+                }
+                const headers = error.config?.headers
+                const sentToken = headers?.get ? headers.get('token') : headers?.['token']
+                if (error.response?.status === 401 && sentToken) {
+                    localStorage.removeItem('token')
+                    setToken('')
+                    setUserData(false)
+                }
+                return Promise.reject(error)
+            }
+        )
+        return () => axios.interceptors.response.eject(id)
+    }, [])
+
     useEffect(() => {
         getDoctosData()
     }, [])
