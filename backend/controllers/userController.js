@@ -7,6 +7,7 @@ import appointmentModel from "../models/appointmentModel.js";
 import { v2 as cloudinary } from 'cloudinary'
 import stripe from "stripe";
 import razorpay from 'razorpay';
+import { validateSlot, reserveSlot, releaseSlot, cancelAndReleaseSlot } from "../utils/slots.js";
 
 // Gateway Initialize
 const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY)
@@ -144,30 +145,29 @@ const bookAppointment = async (req, res) => {
     try {
 
         const { userId, docId, slotDate, slotTime } = req.body
-        const docData = await doctorModel.findById(docId).select("-password")
+
+        const slotError = validateSlot(slotDate, slotTime)
+        if (slotError) {
+            return res.json({ success: false, message: slotError })
+        }
+
+        // snapshot of the doctor stored on the appointment (without password, email or booking history)
+        const docData = await doctorModel.findById(docId).select("-password -email -slots_booked").lean()
+
+        if (!docData) {
+            return res.json({ success: false, message: 'Doctor not found' })
+        }
 
         if (!docData.available) {
             return res.json({ success: false, message: 'Doctor Not Available' })
         }
 
-        let slots_booked = docData.slots_booked
-
-        // checking for slot availablity 
-        if (slots_booked[slotDate]) {
-            if (slots_booked[slotDate].includes(slotTime)) {
-                return res.json({ success: false, message: 'Slot Not Available' })
-            }
-            else {
-                slots_booked[slotDate].push(slotTime)
-            }
-        } else {
-            slots_booked[slotDate] = []
-            slots_booked[slotDate].push(slotTime)
+        const reserved = await reserveSlot(docId, slotDate, slotTime)
+        if (!reserved) {
+            return res.json({ success: false, message: 'Slot Not Available' })
         }
 
-        const userData = await userModel.findById(userId).select("-password")
-
-        delete docData.slots_booked
+        const userData = await userModel.findById(userId).select("-password").lean()
 
         const appointmentData = {
             userId,
@@ -180,11 +180,13 @@ const bookAppointment = async (req, res) => {
             date: Date.now()
         }
 
-        const newAppointment = new appointmentModel(appointmentData)
-        await newAppointment.save()
-
-        // save new slots data in docData
-        await doctorModel.findByIdAndUpdate(docId, { slots_booked })
+        try {
+            await new appointmentModel(appointmentData).save()
+        } catch (error) {
+            // free the slot again if the appointment couldn't be saved
+            await releaseSlot(docId, slotDate, slotTime)
+            throw error
+        }
 
         res.json({ success: true, message: 'Appointment Booked' })
 
@@ -200,25 +202,12 @@ const cancelAppointment = async (req, res) => {
     try {
 
         const { userId, appointmentId } = req.body
-        const appointmentData = await appointmentModel.findById(appointmentId)
 
-        // verify appointment user 
-        if (appointmentData.userId !== userId) {
-            return res.json({ success: false, message: 'Unauthorized action' })
+        // only cancels the user's own appointment, and frees the doctor's slot
+        const cancelled = await cancelAndReleaseSlot(appointmentId, { userId })
+        if (!cancelled) {
+            return res.json({ success: false, message: 'Appointment not found or cannot be cancelled' })
         }
-
-        await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true })
-
-        // releasing doctor slot 
-        const { docId, slotDate, slotTime } = appointmentData
-
-        const doctorData = await doctorModel.findById(docId)
-
-        let slots_booked = doctorData.slots_booked
-
-        slots_booked[slotDate] = slots_booked[slotDate].filter(e => e !== slotTime)
-
-        await doctorModel.findByIdAndUpdate(docId, { slots_booked })
 
         res.json({ success: true, message: 'Appointment Cancelled' })
 

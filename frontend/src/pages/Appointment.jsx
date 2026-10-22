@@ -24,6 +24,14 @@ const Appointment = () => {
         setDocInfo(docInfo)
     }
 
+    // Same format on every browser, eg. "09:30 AM". The server checks for this exact format.
+    const formatSlotTime = (date) => {
+        const hours = date.getHours()
+        const hour12 = hours % 12 === 0 ? 12 : hours % 12
+        const minutes = String(date.getMinutes()).padStart(2, '0')
+        return `${String(hour12).padStart(2, '0')}:${minutes} ${hours < 12 ? 'AM' : 'PM'}`
+    }
+
     const getAvailableSolts = async () => {
 
         setDocSlots([])
@@ -55,7 +63,7 @@ const Appointment = () => {
 
 
             while (currentDate < endTime) {
-                let formattedTime = currentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                let formattedTime = formatSlotTime(currentDate);
 
                 let day = currentDate.getDate()
                 let month = currentDate.getMonth() + 1
@@ -90,6 +98,10 @@ const Appointment = () => {
         if (!token) {
             toast.warning('Login to book appointment')
             return navigate('/login')
+        }
+
+        if (!slotTime || !docSlots[slotIndex] || docSlots[slotIndex].length === 0) {
+            return toast.warning('Please select a time slot')
         }
 
         const date = docSlots[slotIndex][0].datetime
@@ -163,8 +175,8 @@ const Appointment = () => {
             <div className='sm:ml-72 sm:pl-4 mt-8 font-medium text-[#565656]'>
                 <p >Booking slots</p>
                 <div className='flex gap-3 items-center w-full overflow-x-scroll mt-4'>
-                    {docSlots.length && docSlots.map((item, index) => (
-                        <div onClick={() => setSlotIndex(index)} key={index} className={`text-center py-6 min-w-16 rounded-full cursor-pointer ${slotIndex === index ? 'bg-primary text-white' : 'border border-[#DDDDDD]'}`}>
+                    {docSlots.length > 0 && docSlots.map((item, index) => (
+                        <div onClick={() => { setSlotIndex(index); setSlotTime("") }} key={index} className={`text-center py-6 min-w-16 rounded-full cursor-pointer ${slotIndex === index ? 'bg-primary text-white' : 'border border-[#DDDDDD]'}`}>
                             <p>{item[0] && daysOfWeek[item[0].datetime.getDay()]}</p>
                             <p>{item[0] && item[0].datetime.getDate()}</p>
                         </div>
@@ -172,7 +184,7 @@ const Appointment = () => {
                 </div>
 
                 <div className='flex items-center gap-3 w-full overflow-x-scroll mt-4'>
-                    {docSlots.length && docSlots[slotIndex].map((item, index) => (
+                    {docSlots.length > 0 && docSlots[slotIndex].map((item, index) => (
                         <p onClick={() => setSlotTime(item.time)} key={index} className={`text-sm font-light  flex-shrink-0 px-5 py-2 rounded-full cursor-pointer ${item.time === slotTime ? 'bg-primary text-white' : 'text-[#949494] border border-[#B4B4B4]'}`}>{item.time.toLowerCase()}</p>
                     ))}
                 </div>

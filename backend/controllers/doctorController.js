@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
+import { cancelAndReleaseSlot } from "../utils/slots.js";
 
 // API for doctor Login 
 const loginDoctor = async (req, res) => {
@@ -52,13 +53,13 @@ const appointmentCancel = async (req, res) => {
 
         const { docId, appointmentId } = req.body
 
-        const appointmentData = await appointmentModel.findById(appointmentId)
-        if (appointmentData && appointmentData.docId === docId) {
-            await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true })
+        // only cancels this doctor's own appointment, and frees the slot
+        const cancelled = await cancelAndReleaseSlot(appointmentId, { docId })
+        if (cancelled) {
             return res.json({ success: true, message: 'Appointment Cancelled' })
         }
 
-        res.json({ success: false, message: 'Appointment Cancelled' })
+        res.json({ success: false, message: 'Appointment not found or cannot be cancelled' })
 
     } catch (error) {
         console.log(error)
@@ -79,7 +80,7 @@ const appointmentComplete = async (req, res) => {
             return res.json({ success: true, message: 'Appointment Completed' })
         }
 
-        res.json({ success: false, message: 'Appointment Cancelled' })
+        res.json({ success: false, message: 'Appointment not found' })
 
     } catch (error) {
         console.log(error)
@@ -137,9 +138,9 @@ const doctorProfile = async (req, res) => {
 const updateDoctorProfile = async (req, res) => {
     try {
 
-        const { docId, fees, address, available } = req.body
+        const { docId, fees, address, available, about } = req.body
 
-        await doctorModel.findByIdAndUpdate(docId, { fees, address, available })
+        await doctorModel.findByIdAndUpdate(docId, { fees, address, available, about })
 
         res.json({ success: true, message: 'Profile Updated' })
 

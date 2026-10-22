@@ -5,6 +5,7 @@ import bcrypt from "bcrypt";
 import validator from "validator";
 import { v2 as cloudinary } from "cloudinary";
 import userModel from "../models/userModel.js";
+import { cancelAndReleaseSlot } from "../utils/slots.js";
 
 // API for admin login
 const loginAdmin = async (req, res) => {
@@ -46,7 +47,11 @@ const appointmentCancel = async (req, res) => {
     try {
 
         const { appointmentId } = req.body
-        await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true })
+
+        const cancelled = await cancelAndReleaseSlot(appointmentId)
+        if (!cancelled) {
+            return res.json({ success: false, message: 'Appointment not found or cannot be cancelled' })
+        }
 
         res.json({ success: true, message: 'Appointment Cancelled' })
 
@@ -70,6 +75,10 @@ const addDoctor = async (req, res) => {
             return res.json({ success: false, message: "Missing Details" })
         }
 
+        if (!imageFile) {
+            return res.json({ success: false, message: "Please upload a doctor image" })
+        }
+
         // validating email format
         if (!validator.isEmail(email)) {
             return res.json({ success: false, message: "Please enter a valid email" })
@@ -78,6 +87,10 @@ const addDoctor = async (req, res) => {
         // validating strong password
         if (password.length < 8) {
             return res.json({ success: false, message: "Please enter a strong password" })
+        }
+
+        if (await doctorModel.exists({ email })) {
+            return res.json({ success: false, message: "A doctor with this email already exists" })
         }
 
         // hashing user password
