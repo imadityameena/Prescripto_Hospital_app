@@ -57,7 +57,6 @@ const DoctorContextProvider = (props) => {
         try {
 
             const { data } = await axios.get(backendUrl + '/api/doctor/profile', { headers: { dToken } })
-            console.log(data.profileData)
             setProfileData(data.profileData)
 
         } catch (error) {
@@ -68,6 +67,8 @@ const DoctorContextProvider = (props) => {
 
     // Function to cancel doctor appointment using API
     const cancelAppointment = async (appointmentId) => {
+
+        if (!window.confirm('Cancel this appointment? The patient will lose this slot.')) return
 
         try {
 
@@ -91,6 +92,8 @@ const DoctorContextProvider = (props) => {
 
     // Function to Mark appointment completed using API
     const completeAppointment = async (appointmentId) => {
+
+        if (!window.confirm('Mark this appointment as completed?')) return
 
         try {
 

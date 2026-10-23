@@ -21,3 +21,28 @@
 ::-webkit-scrollbar {
     @apply hidden
 }
+
+/* Horizontal rows (time slots, specialities) keep a thin scrollbar
+   so people can see there is more to scroll to */
+.scroll-x {
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #C9D8FF transparent;
+    padding-bottom: 8px;
+}
+
+.scroll-x::-webkit-scrollbar {
+    display: block;
+    height: 6px;
+}
+
+.scroll-x::-webkit-scrollbar-thumb {
+    background: #C9D8FF;
+    border-radius: 9999px;
+}
+
+/* Visible outline for keyboard users */
+:focus-visible {
+    outline: 2px solid #5F6FFF;
+    outline-offset: 2px;
+}

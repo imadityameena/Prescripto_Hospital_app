@@ -9,13 +9,14 @@ import { toast } from 'react-toastify'
 const Appointment = () => {
 
     const { docId } = useParams()
-    const { doctors, currencySymbol, backendUrl, token, getDoctosData } = useContext(AppContext)
+    const { doctors, doctorsLoading, currencySymbol, backendUrl, token, getDoctosData } = useContext(AppContext)
     const daysOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 
     const [docInfo, setDocInfo] = useState(false)
     const [docSlots, setDocSlots] = useState([])
     const [slotIndex, setSlotIndex] = useState(0)
     const [slotTime, setSlotTime] = useState('')
+    const [booking, setBooking] = useState(false)
 
     const navigate = useNavigate()
 
@@ -112,6 +113,7 @@ const Appointment = () => {
 
         const slotDate = day + "_" + month + "_" + year
 
+        setBooking(true)
         try {
 
             const { data } = await axios.post(backendUrl + '/api/user/book-appointment', { docId, slotDate, slotTime }, { headers: { token } })
@@ -126,6 +128,8 @@ const Appointment = () => {
         } catch (error) {
             console.log(error)
             toast.error(error.message)
+        } finally {
+            setBooking(false)
         }
 
     }
@@ -148,7 +152,7 @@ const Appointment = () => {
             {/* ---------- Doctor Details ----------- */}
             <div className='flex flex-col sm:flex-row gap-4'>
                 <div>
-                    <img className='bg-primary w-full sm:max-w-72 rounded-lg' src={docInfo.image} alt="" />
+                    <img className='bg-primary w-full sm:max-w-72 rounded-lg' src={docInfo.image} alt={docInfo.name} />
                 </div>
 
                 <div className='flex-1 border border-[#ADADAD] rounded-lg p-8 py-7 bg-white mx-2 sm:mx-0 mt-[-80px] sm:mt-0'>
@@ -174,28 +178,35 @@ const Appointment = () => {
             {/* Booking slots */}
             <div className='sm:ml-72 sm:pl-4 mt-8 font-medium text-[#565656]'>
                 <p >Booking slots</p>
-                <div className='flex gap-3 items-center w-full overflow-x-scroll mt-4'>
-                    {docSlots.length > 0 && docSlots.map((item, index) => (
-                        <div onClick={() => { setSlotIndex(index); setSlotTime("") }} key={index} className={`text-center py-6 min-w-16 rounded-full cursor-pointer ${slotIndex === index ? 'bg-primary text-white' : 'border border-[#DDDDDD]'}`}>
-                            <p>{item[0] && daysOfWeek[item[0].datetime.getDay()]}</p>
-                            <p>{item[0] && item[0].datetime.getDate()}</p>
-                        </div>
+                <div className='flex gap-3 items-center w-full scroll-x mt-4'>
+                    {docInfo.available && docSlots.length > 0 && docSlots.map((item, index) => (
+                        <button type='button' aria-pressed={slotIndex === index} onClick={() => { setSlotIndex(index); setSlotTime("") }} key={index} className={`text-center py-6 min-w-16 rounded-full cursor-pointer ${slotIndex === index ? 'bg-primary text-white' : 'border border-[#DDDDDD]'}`}>
+                            <span className='block'>{item[0] && daysOfWeek[item[0].datetime.getDay()]}</span>
+                            <span className='block'>{item[0] && item[0].datetime.getDate()}</span>
+                        </button>
                     ))}
                 </div>
 
-                <div className='flex items-center gap-3 w-full overflow-x-scroll mt-4'>
-                    {docSlots.length > 0 && docSlots[slotIndex].map((item, index) => (
-                        <p onClick={() => setSlotTime(item.time)} key={index} className={`text-sm font-light  flex-shrink-0 px-5 py-2 rounded-full cursor-pointer ${item.time === slotTime ? 'bg-primary text-white' : 'text-[#949494] border border-[#B4B4B4]'}`}>{item.time.toLowerCase()}</p>
+                <div className='flex items-center gap-3 w-full scroll-x mt-4'>
+                    {docInfo.available && docSlots.length > 0 && docSlots[slotIndex].map((item, index) => (
+                        <button type='button' aria-pressed={item.time === slotTime} onClick={() => setSlotTime(item.time)} key={index} className={`text-sm font-light  flex-shrink-0 px-5 py-2 rounded-full cursor-pointer ${item.time === slotTime ? 'bg-primary text-white' : 'text-[#949494] border border-[#B4B4B4]'}`}>{item.time.toLowerCase()}</button>
                     ))}
                 </div>
 
-                <button onClick={bookAppointment} className='bg-primary text-white text-sm font-light px-20 py-3 rounded-full my-6'>Book an appointment</button>
+                {docInfo.available
+                    ? <button onClick={bookAppointment} disabled={booking} className='bg-primary text-white text-sm font-light px-20 py-3 rounded-full my-6 disabled:opacity-60 disabled:cursor-wait'>{booking ? 'Booking...' : 'Book an appointment'}</button>
+                    : <p className='my-6 px-4 py-3 rounded-lg bg-gray-100 text-gray-600 text-sm inline-block'>This doctor is not accepting appointments right now.</p>
+                }
             </div>
 
             {/* Listing Releated Doctors */}
             <RelatedDoctors speciality={docInfo.speciality} docId={docId} />
         </div>
-    ) : null
+    ) : (
+        <p className='py-20 text-center text-gray-500'>
+            {doctorsLoading ? 'Loading doctor details...' : 'Doctor not found.'}
+        </p>
+    )
 }
 
 export default Appointment

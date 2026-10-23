@@ -13,6 +13,7 @@ const AppContextProvider = (props) => {
 
 
     const [doctors, setDoctors] = useState([])
+    const [doctorsLoading, setDoctorsLoading] = useState(true)
     const [token, setToken] = useState(localStorage.getItem('token') ? localStorage.getItem('token') : '')
     const [userData, setUserData] = useState(false)
 
@@ -31,6 +32,8 @@ const AppContextProvider = (props) => {
         } catch (error) {
             console.log(error)
             toast.error(error.message)
+        } finally {
+            setDoctorsLoading(false)
         }
 
     }
@@ -88,7 +91,7 @@ const AppContextProvider = (props) => {
     }, [token])
 
     const value = {
-        doctors, getDoctosData,
+        doctors, getDoctosData, doctorsLoading,
         currencySymbol,
         backendUrl,
         token, setToken,

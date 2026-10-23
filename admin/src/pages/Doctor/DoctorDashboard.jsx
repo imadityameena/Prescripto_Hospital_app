@@ -28,6 +28,7 @@ const DoctorDashboard = () => {
           <div>
             <p className='text-xl font-semibold text-gray-600'>{currency} {dashData.earnings}</p>
             <p className='text-gray-400'>Earnings</p>
+            <p className='text-xs text-gray-500 mt-1'>Online {currency}{dashData.earningsOnline ?? 0} · Cash {currency}{dashData.earningsCash ?? 0}</p>
           </div>
         </div>
         <div className='flex items-center gap-2 bg-white p-4 min-w-52 rounded border-2 border-gray-100 cursor-pointer hover:scale-105 transition-all'>
@@ -64,8 +65,8 @@ const DoctorDashboard = () => {
                 : item.isCompleted
                   ? <p className='text-green-500 text-xs font-medium'>Completed</p>
                   : <div className='flex'>
-                    <img onClick={() => cancelAppointment(item._id)} className='w-10 cursor-pointer' src={assets.cancel_icon} alt="" />
-                    <img onClick={() => completeAppointment(item._id)} className='w-10 cursor-pointer' src={assets.tick_icon} alt="" />
+                    <button type='button' onClick={() => cancelAppointment(item._id)} title='Cancel appointment' aria-label='Cancel appointment'><img className='w-10' src={assets.cancel_icon} alt='' /></button>
+                    <button type='button' onClick={() => completeAppointment(item._id)} title='Mark as completed' aria-label='Mark as completed'><img className='w-10' src={assets.tick_icon} alt='' /></button>
                   </div>
               }
             </div>

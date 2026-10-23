@@ -1,8 +1,10 @@
 import jwt from "jsonwebtoken";
+import { fail, serverError } from "../utils/respond.js";
 import bcrypt from "bcrypt";
 import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
 import { cancelAndReleaseSlot } from "../utils/slots.js";
+import { parseAddress } from "../utils/upload.js";
 
 // API for doctor Login 
 const loginDoctor = async (req, res) => {
@@ -13,7 +15,7 @@ const loginDoctor = async (req, res) => {
         const user = await doctorModel.findOne({ email })
 
         if (!user) {
-            return res.json({ success: false, message: "Invalid credentials" })
+            return fail(res, 401, "Invalid credentials")
         }
 
         const isMatch = await bcrypt.compare(password, user.password)
@@ -22,13 +24,12 @@ const loginDoctor = async (req, res) => {
             const token = jwt.sign({ id: user._id, role: 'doctor' }, process.env.JWT_SECRET, { expiresIn: '7d' })
             res.json({ success: true, token })
         } else {
-            res.json({ success: false, message: "Invalid credentials" })
+            fail(res, 401, "Invalid credentials")
         }
 
 
     } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
+        serverError(res, error)
     }
 }
 
@@ -42,8 +43,7 @@ const appointmentsDoctor = async (req, res) => {
         res.json({ success: true, appointments })
 
     } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
+        serverError(res, error)
     }
 }
 
@@ -59,11 +59,10 @@ const appointmentCancel = async (req, res) => {
             return res.json({ success: true, message: 'Appointment Cancelled' })
         }
 
-        res.json({ success: false, message: 'Appointment not found or cannot be cancelled' })
+        fail(res, 400, 'Appointment not found or cannot be cancelled')
 
     } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
+        serverError(res, error)
     }
 
 }
@@ -80,11 +79,10 @@ const appointmentComplete = async (req, res) => {
             return res.json({ success: true, message: 'Appointment Completed' })
         }
 
-        res.json({ success: false, message: 'Appointment not found' })
+        fail(res, 400, 'Appointment not found')
 
     } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
+        serverError(res, error)
     }
 
 }
@@ -97,8 +95,7 @@ const doctorList = async (req, res) => {
         res.json({ success: true, doctors })
 
     } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
+        serverError(res, error)
     }
 
 }
@@ -114,8 +111,7 @@ const changeAvailablity = async (req, res) => {
         res.json({ success: true, message: 'Availablity Changed' })
 
     } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
+        serverError(res, error)
     }
 }
 
@@ -129,8 +125,7 @@ const doctorProfile = async (req, res) => {
         res.json({ success: true, profileData })
 
     } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
+        serverError(res, error)
     }
 }
 
@@ -140,13 +135,27 @@ const updateDoctorProfile = async (req, res) => {
 
         const { docId, fees, address, available, about } = req.body
 
-        await doctorModel.findByIdAndUpdate(docId, { fees, address, available, about })
+        const feesNumber = Number(fees)
+        if (!Number.isFinite(feesNumber) || feesNumber <= 0) {
+            return fail(res, 400, "Fees must be a positive number")
+        }
+
+        const parsedAddress = parseAddress(address)
+        if (!parsedAddress || !parsedAddress.line1) {
+            return fail(res, 400, "Please enter a valid address")
+        }
+
+        await doctorModel.findByIdAndUpdate(docId, {
+            fees: feesNumber,
+            address: parsedAddress,
+            available: Boolean(available),
+            about: String(about || ''),
+        })
 
         res.json({ success: true, message: 'Profile Updated' })
 
     } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
+        serverError(res, error)
     }
 }
 
@@ -156,38 +165,33 @@ const doctorDashboard = async (req, res) => {
 
         const { docId } = req.body
 
-        const appointments = await appointmentModel.find({ docId })
+        const [appointments, patientIds, earningsResult, latestAppointments] = await Promise.all([
+            appointmentModel.countDocuments({ docId }),
+            appointmentModel.distinct('userId', { docId }),
+            // online = paid through Stripe/Razorpay; cash = completed without online payment
+            appointmentModel.aggregate([
+                { $match: { docId, cancelled: false, $or: [{ isCompleted: true }, { payment: true }] } },
+                { $group: { _id: '$payment', total: { $sum: '$amount' } } },
+            ]),
+            appointmentModel.find({ docId }).sort({ date: -1 }).limit(5).lean(),
+        ])
 
-        let earnings = 0
-
-        appointments.map((item) => {
-            if (item.isCompleted || item.payment) {
-                earnings += item.amount
-            }
-        })
-
-        let patients = []
-
-        appointments.map((item) => {
-            if (!patients.includes(item.userId)) {
-                patients.push(item.userId)
-            }
-        })
-
-
+        const earningsOnline = earningsResult.find(r => r._id === true)?.total || 0
+        const earningsCash = earningsResult.find(r => r._id === false)?.total || 0
 
         const dashData = {
-            earnings,
-            appointments: appointments.length,
-            patients: patients.length,
-            latestAppointments: appointments.reverse()
+            earnings: earningsOnline + earningsCash,
+            earningsOnline,
+            earningsCash,
+            appointments,
+            patients: patientIds.length,
+            latestAppointments
         }
 
         res.json({ success: true, dashData })
 
     } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
+        serverError(res, error)
     }
 }
 

@@ -10,6 +10,7 @@ const Login = () => {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL
 
@@ -19,6 +20,7 @@ const Login = () => {
   const onSubmitHandler = async (event) => {
     event.preventDefault();
 
+    setSubmitting(true)
     try {
 
       if (state === 'Admin') {
@@ -46,6 +48,8 @@ const Login = () => {
     } catch (error) {
       console.log(error)
       toast.error(error.message)
+    } finally {
+      setSubmitting(false)
     }
 
   }
@@ -62,11 +66,11 @@ const Login = () => {
           <p>Password</p>
           <input onChange={(e) => setPassword(e.target.value)} value={password} className='border border-[#DADADA] rounded w-full p-2 mt-1' type="password" required />
         </div>
-        <button className='bg-primary text-white w-full py-2 rounded-md text-base'>Login</button>
+        <button disabled={submitting} className='bg-primary text-white w-full py-2 rounded-md text-base disabled:opacity-60 disabled:cursor-wait'>{submitting ? 'Please wait...' : 'Login'}</button>
         {
           state === 'Admin'
-            ? <p>Doctor Login? <span onClick={() => setState('Doctor')} className='text-primary underline cursor-pointer'>Click here</span></p>
-            : <p>Admin Login? <span onClick={() => setState('Admin')} className='text-primary underline cursor-pointer'>Click here</span></p>
+            ? <p>Doctor Login? <button type='button' onClick={() => setState('Doctor')} className='text-primary underline'>Click here</button></p>
+            : <p>Admin Login? <button type='button' onClick={() => setState('Admin')} className='text-primary underline'>Click here</button></p>
         }
       </div>
     </form>

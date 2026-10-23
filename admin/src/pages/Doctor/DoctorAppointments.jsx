@@ -49,8 +49,8 @@ const DoctorAppointments = () => {
               : item.isCompleted
                 ? <p className='text-green-500 text-xs font-medium'>Completed</p>
                 : <div className='flex'>
-                  <img onClick={() => cancelAppointment(item._id)} className='w-10 cursor-pointer' src={assets.cancel_icon} alt="" />
-                  <img onClick={() => completeAppointment(item._id)} className='w-10 cursor-pointer' src={assets.tick_icon} alt="" />
+                  <button type='button' onClick={() => cancelAppointment(item._id)} title='Cancel appointment' aria-label='Cancel appointment'><img className='w-10' src={assets.cancel_icon} alt='' /></button>
+                  <button type='button' onClick={() => completeAppointment(item._id)} title='Mark as completed' aria-label='Mark as completed'><img className='w-10' src={assets.tick_icon} alt='' /></button>
                 </div>
             }
           </div>

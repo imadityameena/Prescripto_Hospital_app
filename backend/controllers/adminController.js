@@ -1,9 +1,10 @@
 import jwt from "jsonwebtoken";
+import { fail, serverError } from "../utils/respond.js";
 import appointmentModel from "../models/appointmentModel.js";
 import doctorModel from "../models/doctorModel.js";
 import bcrypt from "bcrypt";
 import validator from "validator";
-import { v2 as cloudinary } from "cloudinary";
+import { uploadToCloudinary, parseAddress } from "../utils/upload.js";
 import userModel from "../models/userModel.js";
 import { cancelAndReleaseSlot } from "../utils/slots.js";
 
@@ -17,12 +18,11 @@ const loginAdmin = async (req, res) => {
             const token = jwt.sign({ role: 'admin', email }, process.env.JWT_SECRET, { expiresIn: '1d' })
             res.json({ success: true, token })
         } else {
-            res.json({ success: false, message: "Invalid credentials" })
+            fail(res, 401, "Invalid credentials")
         }
 
     } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
+        serverError(res, error)
     }
 
 }
@@ -36,8 +36,7 @@ const appointmentsAdmin = async (req, res) => {
         res.json({ success: true, appointments })
 
     } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
+        serverError(res, error)
     }
 
 }
@@ -50,14 +49,13 @@ const appointmentCancel = async (req, res) => {
 
         const cancelled = await cancelAndReleaseSlot(appointmentId)
         if (!cancelled) {
-            return res.json({ success: false, message: 'Appointment not found or cannot be cancelled' })
+            return fail(res, 400, 'Appointment not found or cannot be cancelled')
         }
 
         res.json({ success: true, message: 'Appointment Cancelled' })
 
     } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
+        serverError(res, error)
     }
 
 }
@@ -72,25 +70,35 @@ const addDoctor = async (req, res) => {
 
         // checking for all data to add doctor
         if (!name || !email || !password || !speciality || !degree || !experience || !about || !fees || !address) {
-            return res.json({ success: false, message: "Missing Details" })
+            return fail(res, 400, "Missing Details")
         }
 
         if (!imageFile) {
-            return res.json({ success: false, message: "Please upload a doctor image" })
+            return fail(res, 400, "Please upload a doctor image")
         }
 
         // validating email format
         if (!validator.isEmail(email)) {
-            return res.json({ success: false, message: "Please enter a valid email" })
+            return fail(res, 400, "Please enter a valid email")
         }
 
         // validating strong password
         if (password.length < 8) {
-            return res.json({ success: false, message: "Please enter a strong password" })
+            return fail(res, 400, "Please enter a strong password")
+        }
+
+        const feesNumber = Number(fees)
+        if (!Number.isFinite(feesNumber) || feesNumber <= 0) {
+            return fail(res, 400, "Fees must be a positive number")
+        }
+
+        const parsedAddress = parseAddress(address)
+        if (!parsedAddress || !parsedAddress.line1) {
+            return fail(res, 400, "Please enter a valid address")
         }
 
         if (await doctorModel.exists({ email })) {
-            return res.json({ success: false, message: "A doctor with this email already exists" })
+            return fail(res, 409, "A doctor with this email already exists")
         }
 
         // hashing user password
@@ -98,8 +106,7 @@ const addDoctor = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, salt)
 
         // upload image to cloudinary
-        const imageUpload = await cloudinary.uploader.upload(imageFile.path, { resource_type: "image" })
-        const imageUrl = imageUpload.secure_url
+        const imageUrl = await uploadToCloudinary(imageFile)
 
         const doctorData = {
             name,
@@ -110,8 +117,8 @@ const addDoctor = async (req, res) => {
             degree,
             experience,
             about,
-            fees,
-            address: JSON.parse(address),
+            fees: feesNumber,
+            address: parsedAddress,
             date: Date.now()
         }
 
@@ -120,8 +127,7 @@ const addDoctor = async (req, res) => {
         res.json({ success: true, message: 'Doctor Added' })
 
     } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
+        serverError(res, error)
     }
 }
 
@@ -133,8 +139,7 @@ const allDoctors = async (req, res) => {
         res.json({ success: true, doctors })
 
     } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
+        serverError(res, error)
     }
 }
 
@@ -142,22 +147,20 @@ const allDoctors = async (req, res) => {
 const adminDashboard = async (req, res) => {
     try {
 
-        const doctors = await doctorModel.find({})
-        const users = await userModel.find({})
-        const appointments = await appointmentModel.find({})
+        // count in the database instead of loading every record
+        const [doctors, patients, appointments, latestAppointments] = await Promise.all([
+            doctorModel.countDocuments(),
+            userModel.countDocuments(),
+            appointmentModel.countDocuments(),
+            appointmentModel.find({}).sort({ date: -1 }).limit(5).lean(),
+        ])
 
-        const dashData = {
-            doctors: doctors.length,
-            appointments: appointments.length,
-            patients: users.length,
-            latestAppointments: appointments.reverse()
-        }
+        const dashData = { doctors, appointments, patients, latestAppointments }
 
         res.json({ success: true, dashData })
 
     } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
+        serverError(res, error)
     }
 }
 

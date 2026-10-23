@@ -3,6 +3,7 @@ import cors from "cors";
 import "dotenv/config";
 import connectDB from "./config/mongodb.js";
 import connectCloudinary from "./config/cloudinary.js";
+import { isAllowedOrigin } from "./config/origins.js";
 import userRouter from "./routes/userRoute.js";
 import doctorRouter from "./routes/doctorRoute.js";
 import adminRouter from "./routes/adminRoute.js";
@@ -22,12 +23,8 @@ app.set("trust proxy", 1);
 app.use(express.json());
 
 app.use(cors({
-  origin: [
-    "https://prescripto-hospital-app.vercel.app",      // patient frontend
-    "https://prescripto-hospital-app-pxla.vercel.app", // admin/doctor panel
-    "http://localhost:5173",                           // patient frontend (local)
-    "http://localhost:5174",                           // admin panel (local)
-  ],
+  // allowed sites are listed in config/origins.js
+  origin: (origin, callback) => callback(null, !origin || isAllowedOrigin(origin)),
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));

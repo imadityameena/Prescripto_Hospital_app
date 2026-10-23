@@ -233,7 +233,12 @@ const rawDoctors = [
 ];
 
 const buildSeedDoctors = async () => {
-  const hashedPassword = await bcrypt.hash("doctor123", 10);
+  // The password comes from the environment so it is never stored in the repo
+  const seedPassword = process.env.SEED_DOCTOR_PASSWORD;
+  if (!seedPassword || seedPassword.length < 8) {
+    throw new Error("Set SEED_DOCTOR_PASSWORD (at least 8 characters) in backend/.env before seeding");
+  }
+  const hashedPassword = await bcrypt.hash(seedPassword, 10);
 
   return rawDoctors.map((doctor, index) => {
     const doctorNumber = index + 1;
@@ -269,7 +274,7 @@ const seedDoctors = async () => {
     await doctorModel.insertMany(doctors);
 
     console.log("Doctors seeded successfully.");
-    console.log("Default password for all seeded doctors: doctor123");
+    console.log("Seeded doctors use the password from SEED_DOCTOR_PASSWORD.");
     process.exit(0);
   } catch (error) {
     console.error("Doctor seeding failed:", error.message);

@@ -94,6 +94,8 @@ const AdminContextProvider = (props) => {
     // Function to cancel appointment using API
     const cancelAppointment = async (appointmentId) => {
 
+        if (!window.confirm('Cancel this appointment? The patient will lose this slot.')) return
+
         try {
 
             const { data } = await axios.post(backendUrl + '/api/admin/cancel-appointment', { appointmentId }, { headers: { aToken } })
@@ -101,6 +103,7 @@ const AdminContextProvider = (props) => {
             if (data.success) {
                 toast.success(data.message)
                 getAllAppointments()
+                getDashData()
             } else {
                 toast.error(data.message)
             }

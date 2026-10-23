@@ -19,6 +19,12 @@ const Verify = () => {
     // Function to verify stripe payment
     const verifyStripe = async () => {
 
+        // patient closed the Stripe page without paying
+        if (success !== 'true') {
+            toast.info('Payment cancelled')
+            return navigate("/my-appointments")
+        }
+
         try {
 
             const { data } = await axios.post(backendUrl + "/api/user/verifyStripe", { appointmentId, sessionId }, { headers: { token } })
@@ -29,11 +35,11 @@ const Verify = () => {
                 toast.error(data.message)
             }
 
-            navigate("/my-appointments")
-
         } catch (error) {
             toast.error(error.message)
             console.log(error)
+        } finally {
+            navigate("/my-appointments")
         }
 
     }
@@ -41,6 +47,8 @@ const Verify = () => {
     useEffect(() => {
         if (token && appointmentId && success) {
             verifyStripe()
+        } else {
+            navigate("/my-appointments")
         }
     }, [token])
 

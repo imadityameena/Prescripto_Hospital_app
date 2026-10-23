@@ -10,3 +10,9 @@
 ::-webkit-scrollbar{
     display: none;
 }
+
+/* Visible outline for keyboard users */
+:focus-visible {
+    outline: 2px solid #5F6FFF;
+    outline-offset: 2px;
+}

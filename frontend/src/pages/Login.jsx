@@ -6,11 +6,12 @@ import { useNavigate } from 'react-router-dom'
 
 const Login = () => {
 
-  const [state, setState] = useState('Sign Up')
+  const [state, setState] = useState('Login')
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   const navigate = useNavigate()
   const { backendUrl, token, setToken } = useContext(AppContext)
@@ -18,6 +19,7 @@ const Login = () => {
   const onSubmitHandler = async (event) => {
     event.preventDefault();
 
+    setSubmitting(true)
     try {
 
       if (state === 'Sign Up') {
@@ -47,6 +49,8 @@ const Login = () => {
     } catch (error) {
       console.log(error)
       toast.error(error.message)
+    } finally {
+      setSubmitting(false)
     }
 
   }
@@ -77,10 +81,10 @@ const Login = () => {
           <p>Password</p>
           <input onChange={(e) => setPassword(e.target.value)} value={password} className='border border-[#DADADA] rounded w-full p-2 mt-1' type="password" required />
         </div>
-        <button className='bg-primary text-white w-full py-2 my-2 rounded-md text-base'>{state === 'Sign Up' ? 'Create account' : 'Login'}</button>
+        <button disabled={submitting} className='bg-primary text-white w-full py-2 my-2 rounded-md text-base disabled:opacity-60 disabled:cursor-wait'>{submitting ? 'Please wait...' : state === 'Sign Up' ? 'Create account' : 'Login'}</button>
         {state === 'Sign Up'
-          ? <p>Already have an account? <span onClick={() => setState('Login')} className='text-primary underline cursor-pointer'>Login here</span></p>
-          : <p>Create an new account? <span onClick={() => setState('Sign Up')} className='text-primary underline cursor-pointer'>Click here</span></p>
+          ? <p>Already have an account? <button type='button' onClick={() => setState('Login')} className='text-primary underline'>Login here</button></p>
+          : <p>Create an new account? <button type='button' onClick={() => setState('Sign Up')} className='text-primary underline'>Click here</button></p>
         }
       </div>
     </form>
