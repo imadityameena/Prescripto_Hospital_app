@@ -82,7 +82,7 @@ Create a `.env` file in each folder. These files are ignored by git — never co
 | `CLOUDINARY_NAME` | Cloudinary cloud name |
 | `CLOUDINARY_API_KEY` | Cloudinary API key |
 | `CLOUDINARY_SECRET_KEY` | Cloudinary API secret |
-| `CURRENCY` | Currency code for payments, e.g. `INR` |
+| `CURRENCY` | Currency code for payments, e.g. `USD` |
 | `RAZORPAY_KEY_ID` | Razorpay key id |
 | `RAZORPAY_KEY_SECRET` | Razorpay key secret |
 | `STRIPE_SECRET_KEY` | Stripe secret key |
@@ -94,7 +94,7 @@ Create a `.env` file in each folder. These files are ignored by git — never co
 | Variable | Description |
 |---|---|
 | `VITE_BACKEND_URL` | Backend URL, e.g. `http://localhost:4000` |
-| `VITE_CURRENCY` | Currency symbol shown in the panel, e.g. `₹` |
+| `VITE_CURRENCY` | Currency code shown in the panel, e.g. `USD` |
 | `VITE_PATIENT_URL` | Optional. Patient site URL for the "Go to the patient site" link |
 
 **frontend/.env**
@@ -102,6 +102,7 @@ Create a `.env` file in each folder. These files are ignored by git — never co
 | Variable | Description |
 |---|---|
 | `VITE_RAZORPAY_KEY_ID` | Razorpay key id (same as the backend's) |
+| `VITE_CURRENCY` | Currency code for prices, e.g. `USD` (must match the backend's `CURRENCY`) |
 | `VITE_ADMIN_URL` | Optional. Admin panel URL for the "Staff login" links, e.g. `http://localhost:5174` locally |
 
 ### 3. (Optional) Add sample doctors

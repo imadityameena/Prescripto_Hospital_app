@@ -47,3 +47,16 @@ export const plural = (word = '') => (word.endsWith('s') ? word : `${word}s`)
 
 // values older accounts were created with, which really mean "not filled in"
 export const isUnset = (value) => !value || value === 'Not Selected' || /^0+$/.test(String(value))
+
+// Currency for prices, e.g. "USD" or "INR" (set VITE_CURRENCY in frontend/.env)
+export const CURRENCY = import.meta.env.VITE_CURRENCY || 'USD'
+
+// 50 -> "$50"
+export const formatMoney = (amount) => {
+  const value = Number(amount) || 0
+  try {
+    return new Intl.NumberFormat(CURRENCY === 'INR' ? 'en-IN' : 'en-US', { style: 'currency', currency: CURRENCY, minimumFractionDigits: Number.isInteger(value) ? 0 : 2, maximumFractionDigits: 2 }).format(value)
+  } catch {
+    return `${CURRENCY} ${value}`
+  }
+}

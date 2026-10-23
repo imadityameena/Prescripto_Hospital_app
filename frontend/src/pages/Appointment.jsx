@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { AppContext } from '../context/AppContext'
 import { assets } from '../assets/assets'
 import RelatedDoctors from '../components/RelatedDoctors'
+import { formatMoney } from '../utils/format'
 import axios from 'axios'
 import { toast } from 'react-toastify'
 import { optimizeImage } from '../utils/image'
@@ -11,7 +12,7 @@ import { Badge, Spinner, buttonPrimary } from '../components/ui'
 const Appointment = () => {
 
     const { docId } = useParams()
-    const { doctors, doctorsLoading, currencySymbol, backendUrl, token, getDoctosData } = useContext(AppContext)
+    const { doctors, doctorsLoading, backendUrl, token, getDoctosData } = useContext(AppContext)
     const daysOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 
     const [docInfo, setDocInfo] = useState(false)
@@ -209,7 +210,7 @@ const Appointment = () => {
                     <dl className='grid sm:grid-cols-2 gap-4 mt-5 text-sm'>
                         <div className='rounded-xl bg-[#F8F9FD] px-4 py-3'>
                             <dt className='text-gray-500'>Consultation fee</dt>
-                            <dd className='text-lg font-semibold text-[#262626]'>{currencySymbol}{docInfo.fees}</dd>
+                            <dd className='text-lg font-semibold text-[#262626]'>{formatMoney(docInfo.fees)}</dd>
                         </div>
                         <div className='rounded-xl bg-[#F8F9FD] px-4 py-3'>
                             <dt className='text-gray-500'>Clinic address</dt>
@@ -266,7 +267,7 @@ const Appointment = () => {
                                 <div className='flex justify-between py-2.5'><dt className='text-gray-500'>Doctor</dt><dd className='text-[#262626] text-right'>{docInfo.name}</dd></div>
                                 <div className='flex justify-between py-2.5'><dt className='text-gray-500'>Date</dt><dd className='text-[#262626]'>{chosenDay.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}</dd></div>
                                 <div className='flex justify-between py-2.5'><dt className='text-gray-500'>Time</dt><dd className={slotTime ? 'text-[#262626]' : 'text-gray-400'}>{slotTime || 'Not selected'}</dd></div>
-                                <div className='flex justify-between py-2.5'><dt className='text-gray-500'>Fee</dt><dd className='font-semibold text-[#262626]'>{currencySymbol}{docInfo.fees}</dd></div>
+                                <div className='flex justify-between py-2.5'><dt className='text-gray-500'>Fee</dt><dd className='font-semibold text-[#262626]'>{formatMoney(docInfo.fees)}</dd></div>
                             </dl>
                             <button onClick={bookAppointment} disabled={booking} className={`${buttonPrimary} w-full mt-4 py-3`}>
                                 {booking ? 'Booking...' : slotTime ? 'Book appointment' : 'Select a time to book'}

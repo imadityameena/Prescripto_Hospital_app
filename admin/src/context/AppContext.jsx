@@ -30,16 +30,16 @@ const AppContextProvider = (props) => {
         return age
     }
 
-    // Formats an amount as money, e.g. 1500 => "₹1,500".
-    // VITE_CURRENCY can be a code ("INR") or a symbol ("₹").
+    // Formats an amount as money, e.g. 1500 => "$1,500".
+    // VITE_CURRENCY can be a code ("USD", "INR") or a symbol ("$").
     const formatMoney = (amount) => {
         const value = Number(amount) || 0
         if (/^[A-Z]{3}$/.test(currency || '')) {
             try {
-                return new Intl.NumberFormat('en-IN', { style: 'currency', currency, maximumFractionDigits: 0 }).format(value)
+                return new Intl.NumberFormat(currency === 'INR' ? 'en-IN' : 'en-US', { style: 'currency', currency, minimumFractionDigits: Number.isInteger(value) ? 0 : 2, maximumFractionDigits: 2 }).format(value)
             } catch { /* unknown code: fall through */ }
         }
-        return `${currency || ''}${value.toLocaleString('en-IN')}`
+        return `${currency || ''}${value.toLocaleString('en-US')}`
     }
 
     const value = {

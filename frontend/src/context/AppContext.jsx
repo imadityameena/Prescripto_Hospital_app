@@ -1,6 +1,7 @@
 import { createContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import axios from 'axios'
+import { CURRENCY } from "../utils/format";
 
 export const AppContext = createContext()
 
@@ -19,7 +20,7 @@ const readCachedDoctors = () => {
 
 const AppContextProvider = (props) => {
 
-    const currencySymbol = '₹'
+    const currencySymbol = CURRENCY
     const backendUrl = process.env.NODE_ENV !== "production"
   ? "http://localhost:4000"  // Local
   : "https://prescripto-hospital-backend.vercel.app"; // Deployed

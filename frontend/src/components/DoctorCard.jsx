@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { optimizeImage } from '../utils/image'
+import { formatMoney } from '../utils/format'
 
 // One doctor in a grid (home page, all doctors, related doctors)
 const DoctorCard = ({ doctor }) => (
@@ -21,7 +22,7 @@ const DoctorCard = ({ doctor }) => (
       <p className='text-gray-500 text-sm truncate'>{doctor.speciality}</p>
       <div className='flex items-center justify-between mt-3 pt-3 border-t border-gray-100 text-sm'>
         <span className='text-gray-500'>{doctor.experience}</span>
-        <span className='font-medium text-[#262626]'>₹{doctor.fees}</span>
+        <span className='font-medium text-[#262626]'>{formatMoney(doctor.fees)}</span>
       </div>
     </div>
   </Link>

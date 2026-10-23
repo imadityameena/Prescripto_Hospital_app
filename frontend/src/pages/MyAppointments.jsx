@@ -5,7 +5,7 @@ import axios from 'axios'
 import { toast } from 'react-toastify'
 import { assets } from '../assets/assets'
 import { optimizeImage } from '../utils/image'
-import { formatSlotDate, slotToDate, isPastSlot } from '../utils/format'
+import { formatSlotDate, slotToDate, isPastSlot, formatMoney } from '../utils/format'
 import { PageHeader, Badge, Spinner, buttonPrimary } from '../components/ui'
 
 // which tab an appointment belongs to
@@ -245,7 +245,7 @@ const MyAppointments = () => {
                                                     <p className='text-gray-500'>{item.docData.speciality}</p>
                                                     <p className='mt-2 text-[#262626]'>
                                                         <span className='font-medium'>{item.slotTime}</span>
-                                                        <span className='text-gray-400'> · {formatSlotDate(item.slotDate)} · ₹{item.amount}</span>
+                                                        <span className='text-gray-400'> · {formatSlotDate(item.slotDate)} · {formatMoney(item.amount)}</span>
                                                     </p>
                                                     <p className='text-gray-500 mt-0.5'>{[item.docData.address?.line1, item.docData.address?.line2].filter(Boolean).join(', ')}</p>
                                                 </div>
