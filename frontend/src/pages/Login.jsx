@@ -8,6 +8,7 @@ import { assets } from '../assets/assets'
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const ADMIN_SITE = import.meta.env.VITE_ADMIN_URL || 'https://prescripto-hospital-app-pxla.vercel.app'
 const TODAY = new Date().toISOString().slice(0, 10)
+const MAX_PHOTO_MB = 5
 
 // ---------- password strength ----------
 
@@ -103,6 +104,42 @@ const StrengthMeter = ({ password }) => {
   )
 }
 
+// Optional profile photo with a round preview
+const PhotoPicker = ({ photo, onChange, error }) => {
+  const [preview, setPreview] = useState('')
+
+  // make (and later free) a temporary URL for the preview
+  useEffect(() => {
+    if (!photo) return setPreview('')
+    const url = URL.createObjectURL(photo)
+    setPreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [photo])
+
+  return (
+    <div className='flex items-center gap-4'>
+      <label htmlFor='photo' className='relative cursor-pointer shrink-0 group' title='Choose a photo'>
+        {preview
+          ? <img src={preview} alt='Your photo' className='w-20 h-20 rounded-full object-cover border-2 border-primary/30' />
+          : <span className='w-20 h-20 rounded-full bg-[#F2F3FF] border-2 border-dashed border-primary/40 flex items-center justify-center text-primary text-2xl group-hover:bg-[#E2E5FF] transition-colors' aria-hidden='true'>+</span>
+        }
+      </label>
+      <div className='text-sm'>
+        <p className='font-medium text-[#262626]'>Profile photo <span className='font-normal text-gray-400'>(optional)</span></p>
+        <div className='flex gap-3 mt-1'>
+          <label htmlFor='photo' className='text-primary font-medium cursor-pointer hover:underline'>{photo ? 'Change' : 'Upload photo'}</label>
+          {photo && <button type='button' onClick={() => onChange(null)} className='text-gray-500 hover:text-red-500'>Remove</button>}
+        </div>
+        {error
+          ? <p className='text-red-500 text-xs mt-1'>{error}</p>
+          : <p className='text-gray-400 text-xs mt-1'>JPG, PNG or WebP, up to {MAX_PHOTO_MB} MB</p>}
+      </div>
+      <input id='photo' type='file' accept='image/*' className='sr-only'
+        onChange={(e) => { onChange(e.target.files[0] || null); e.target.value = '' }} />
+    </div>
+  )
+}
+
 // ---------- page ----------
 
 const emptyForm = {
@@ -118,6 +155,7 @@ const Login = () => {
   const [step, setStep] = useState(1)   // sign-up step: 1 = account, 2 = personal details
 
   const [form, setForm] = useState(emptyForm)
+  const [photo, setPhoto] = useState(null)
   const [errors, setErrors] = useState({})
   const [formError, setFormError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -153,6 +191,17 @@ const Login = () => {
     const value = e.target.value
     setForm(prev => ({ ...prev, [field]: value }))
     if (errors[field]) setErrors(prev => ({ ...prev, [field]: undefined }))
+  }
+
+  const choosePhoto = (file) => {
+    if (file && !file.type.startsWith('image/')) {
+      return setErrors(prev => ({ ...prev, photo: 'Please choose an image file' }))
+    }
+    if (file && file.size > MAX_PHOTO_MB * 1024 * 1024) {
+      return setErrors(prev => ({ ...prev, photo: `Photo must be ${MAX_PHOTO_MB} MB or smaller` }))
+    }
+    setErrors(prev => ({ ...prev, photo: undefined }))
+    setPhoto(file)
   }
 
   const inputClass = (field) => `${inputBase} ${errors[field] ? 'border-red-400' : 'border-[#DADADA]'}`
@@ -197,6 +246,20 @@ const Login = () => {
 
   // ---------- submit ----------
 
+  // sign-up is sent as form data so the optional photo can go with it
+  const buildSignupData = () => {
+    const data = new FormData()
+    data.append('name', form.name.trim())
+    data.append('email', form.email.trim())
+    data.append('password', form.password)
+    data.append('phone', form.phone.trim())
+    data.append('gender', form.gender)
+    data.append('dob', form.dob)
+    data.append('address', JSON.stringify({ line1: form.line1.trim(), line2: form.line2.trim() }))
+    if (photo) data.append('image', photo)
+    return data
+  }
+
   const onSubmitHandler = async (event) => {
     event.preventDefault()
     setFormError('')
@@ -214,15 +277,7 @@ const Login = () => {
     try {
 
       const { data } = isSignUp
-        ? await axios.post(backendUrl + '/api/user/register', {
-          name: form.name.trim(),
-          email: form.email.trim(),
-          password: form.password,
-          phone: form.phone.trim(),
-          gender: form.gender,
-          dob: form.dob,
-          address: { line1: form.line1.trim(), line2: form.line2.trim() },
-        })
+        ? await axios.post(backendUrl + '/api/user/register', buildSignupData())
         : await axios.post(backendUrl + '/api/user/login', { email: form.email.trim(), password: form.password })
 
       if (data.success) {
@@ -349,6 +404,9 @@ const Login = () => {
           {/* ---------- Sign up, step 2: personal details ---------- */}
           {isSignUp && step === 2 && (
             <div className='grid sm:grid-cols-2 gap-4'>
+              <div className='sm:col-span-2'>
+                <PhotoPicker photo={photo} onChange={choosePhoto} error={errors.photo} />
+              </div>
               <Field id='phone' label='Mobile number' error={errors.phone} hint='Include country code if outside India'>
                 <input id='phone' type='tel' inputMode='tel' autoComplete='tel' placeholder='e.g. 98765 43210'
                   value={form.phone} onChange={update('phone')} {...errorProps('phone')} className={inputClass('phone')} />

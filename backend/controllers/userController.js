@@ -80,6 +80,9 @@ const registerUser = async (req, res) => {
         const salt = await bcrypt.genSalt(10); // the more no. round the more time it will take
         const hashedPassword = await bcrypt.hash(password, salt)
 
+        // optional profile photo, uploaded only after all checks have passed
+        const image = req.file ? await uploadToCloudinary(req.file) : undefined
+
         const userData = {
             name: name.trim(),
             email,
@@ -88,6 +91,7 @@ const registerUser = async (req, res) => {
             address: parsedAddress,
             gender,
             dob,
+            ...(image && { image }),
         }
 
         const newUser = new userModel(userData)
