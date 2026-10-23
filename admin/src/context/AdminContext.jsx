@@ -1,6 +1,7 @@
 import axios from "axios";
 import { createContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { isDemoToken, DEMO_MESSAGE } from "../utils/demo";
 
 
 export const AdminContext = createContext()
@@ -10,6 +11,7 @@ const AdminContextProvider = (props) => {
     const backendUrl = import.meta.env.VITE_BACKEND_URL
 
     const [aToken, setAToken] = useState(localStorage.getItem('aToken') ? localStorage.getItem('aToken') : '')
+    const isDemo = isDemoToken(aToken)
 
     const [appointments, setAppointments] = useState([])
     const [doctors, setDoctors] = useState([])
@@ -55,6 +57,7 @@ const AdminContextProvider = (props) => {
 
     // Function to change doctor availablity using API
     const changeAvailability = async (docId) => {
+        if (isDemo) return toast.info(DEMO_MESSAGE)
         try {
 
             const { data } = await axios.post(backendUrl + '/api/admin/change-availability', { docId }, { headers: { aToken } })
@@ -94,6 +97,7 @@ const AdminContextProvider = (props) => {
     // Function to cancel appointment using API
     const cancelAppointment = async (appointmentId) => {
 
+        if (isDemo) return toast.info(DEMO_MESSAGE)
         if (!window.confirm('Cancel this appointment? The patient will lose this slot.')) return
 
         try {
@@ -135,7 +139,7 @@ const AdminContextProvider = (props) => {
     }
 
     const value = {
-        aToken, setAToken,
+        aToken, setAToken, isDemo,
         doctors,
         getAllDoctors,
         changeAvailability,

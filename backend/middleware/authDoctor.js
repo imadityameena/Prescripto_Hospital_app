@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken'
+import { DEMO_MESSAGE } from '../utils/demo.js'
 
 // doctor authentication middleware
 const authDoctor = async (req, res, next) => {
@@ -11,6 +12,11 @@ const authDoctor = async (req, res, next) => {
         if (token_decode.role !== 'doctor') {
             return res.status(401).json({ success: false, message: 'Not Authorized Login Again' })
         }
+        // demo doctors can look but not change anything
+        if (token_decode.demo === true && req.method !== 'GET') {
+            return res.status(403).json({ success: false, message: DEMO_MESSAGE })
+        }
+        req.isDemo = token_decode.demo === true
         req.body.docId = token_decode.id
         next()
     } catch (error) {

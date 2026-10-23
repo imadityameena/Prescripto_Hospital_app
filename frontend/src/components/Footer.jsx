@@ -2,6 +2,8 @@ import React from 'react'
 import { assets } from '../assets/assets'
 import { Link } from 'react-router-dom'
 
+const ADMIN_SITE = import.meta.env.VITE_ADMIN_URL || 'https://prescripto-hospital-app-pxla.vercel.app'
+
 const Footer = () => {
   return (
     <div className='md:mx-10'>
@@ -22,6 +24,7 @@ Book appointments anytime, anywhere — your health is our priority.
             <li><Link to='/doctors' onClick={() => scrollTo(0, 0)} className='hover:text-primary'>All doctors</Link></li>
             <li><Link to='/about' onClick={() => scrollTo(0, 0)} className='hover:text-primary'>About us</Link></li>
             <li><Link to='/contact' onClick={() => scrollTo(0, 0)} className='hover:text-primary'>Contact</Link></li>
+            <li><a href={ADMIN_SITE} className='hover:text-primary'>Doctor / Admin login</a></li>
           </ul>
         </div>
 

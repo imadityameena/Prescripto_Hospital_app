@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { fail, serverError } from "../utils/respond.js";
+import { maskAppointments, maskDoctor } from "../utils/demo.js";
 import appointmentModel from "../models/appointmentModel.js";
 import doctorModel from "../models/doctorModel.js";
 import bcrypt from "bcrypt";
@@ -28,12 +29,22 @@ const loginAdmin = async (req, res) => {
 }
 
 
+// API for the read-only demo admin (no password, used on the login page)
+const demoLoginAdmin = async (req, res) => {
+    try {
+        const token = jwt.sign({ role: 'admin', demo: true }, process.env.JWT_SECRET, { expiresIn: '2h' })
+        res.json({ success: true, token })
+    } catch (error) {
+        serverError(res, error)
+    }
+}
+
 // API to get all appointments list
 const appointmentsAdmin = async (req, res) => {
     try {
 
         const appointments = await appointmentModel.find({})
-        res.json({ success: true, appointments })
+        res.json({ success: true, appointments: req.isDemo ? maskAppointments(appointments) : appointments })
 
     } catch (error) {
         serverError(res, error)
@@ -136,7 +147,7 @@ const allDoctors = async (req, res) => {
     try {
 
         const doctors = await doctorModel.find({}).select('-password')
-        res.json({ success: true, doctors })
+        res.json({ success: true, doctors: req.isDemo ? doctors.map(maskDoctor) : doctors })
 
     } catch (error) {
         serverError(res, error)
@@ -155,7 +166,10 @@ const adminDashboard = async (req, res) => {
             appointmentModel.find({}).sort({ date: -1 }).limit(5).lean(),
         ])
 
-        const dashData = { doctors, appointments, patients, latestAppointments }
+        const dashData = {
+            doctors, appointments, patients,
+            latestAppointments: req.isDemo ? maskAppointments(latestAppointments) : latestAppointments,
+        }
 
         res.json({ success: true, dashData })
 
@@ -166,6 +180,7 @@ const adminDashboard = async (req, res) => {
 
 export {
     loginAdmin,
+    demoLoginAdmin,
     appointmentsAdmin,
     appointmentCancel,
     addDoctor,

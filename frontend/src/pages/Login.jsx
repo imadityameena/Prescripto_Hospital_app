@@ -6,6 +6,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { assets } from '../assets/assets'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const ADMIN_SITE = import.meta.env.VITE_ADMIN_URL || 'https://prescripto-hospital-app-pxla.vercel.app'
 const TODAY = new Date().toISOString().slice(0, 10)
 
 // ---------- password strength ----------
@@ -402,6 +403,13 @@ const Login = () => {
               : <>New to Prescripto? <button type='button' onClick={() => switchMode('Sign Up')} className='text-primary font-medium hover:underline'>Create an account</button></>
             }
           </p>
+
+          {/* staff login lives on the admin panel (it also has a read-only demo) */}
+          <div className='mt-6 pt-5 border-t border-gray-100 text-center text-xs text-gray-500'>
+            Doctor or admin?{' '}
+            <a href={ADMIN_SITE} className='text-primary font-medium hover:underline'>Staff login →</a>
+            <span className='block mt-1 text-gray-400'>Includes a read-only demo, no password needed</span>
+          </div>
         </form>
       </div>
     </div>

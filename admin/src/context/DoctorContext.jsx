@@ -1,6 +1,7 @@
 import { createContext, useEffect, useState } from "react";
 import axios from 'axios'
 import { toast } from 'react-toastify'
+import { isDemoToken, DEMO_MESSAGE } from '../utils/demo'
 
 
 export const DoctorContext = createContext()
@@ -10,6 +11,7 @@ const DoctorContextProvider = (props) => {
     const backendUrl = import.meta.env.VITE_BACKEND_URL
 
     const [dToken, setDToken] = useState(localStorage.getItem('dToken') ? localStorage.getItem('dToken') : '')
+    const isDemo = isDemoToken(dToken)
     const [appointments, setAppointments] = useState([])
     const [dashData, setDashData] = useState(false)
     const [profileData, setProfileData] = useState(false)
@@ -68,6 +70,7 @@ const DoctorContextProvider = (props) => {
     // Function to cancel doctor appointment using API
     const cancelAppointment = async (appointmentId) => {
 
+        if (isDemo) return toast.info(DEMO_MESSAGE)
         if (!window.confirm('Cancel this appointment? The patient will lose this slot.')) return
 
         try {
@@ -93,6 +96,7 @@ const DoctorContextProvider = (props) => {
     // Function to Mark appointment completed using API
     const completeAppointment = async (appointmentId) => {
 
+        if (isDemo) return toast.info(DEMO_MESSAGE)
         if (!window.confirm('Mark this appointment as completed?')) return
 
         try {
@@ -135,7 +139,7 @@ const DoctorContextProvider = (props) => {
     }
 
     const value = {
-        dToken, setDToken, backendUrl,
+        dToken, setDToken, backendUrl, isDemo,
         appointments,
         getAppointments,
         cancelAppointment,

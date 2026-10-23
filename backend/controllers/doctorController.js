@@ -5,6 +5,7 @@ import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
 import { cancelAndReleaseSlot } from "../utils/slots.js";
 import { parseAddress } from "../utils/upload.js";
+import { maskAppointments, maskDoctor } from "../utils/demo.js";
 
 // API for doctor Login 
 const loginDoctor = async (req, res) => {
@@ -33,6 +34,37 @@ const loginDoctor = async (req, res) => {
     }
 }
 
+// API for the read-only demo doctor (no password, used on the login page).
+// Uses DEMO_DOCTOR_EMAIL if set, otherwise the doctor with the most appointments,
+// so the demo dashboard has something to show.
+const demoLoginDoctor = async (req, res) => {
+    try {
+        let doctor = process.env.DEMO_DOCTOR_EMAIL
+            ? await doctorModel.findOne({ email: process.env.DEMO_DOCTOR_EMAIL }).select('_id')
+            : null
+
+        if (!doctor) {
+            const [busiest] = await appointmentModel.aggregate([
+                { $group: { _id: '$docId', count: { $sum: 1 } } },
+                { $sort: { count: -1 } },
+                { $limit: 1 },
+            ])
+            doctor = busiest
+                ? await doctorModel.findById(busiest._id).select('_id')
+                : await doctorModel.findOne({}).select('_id')
+        }
+
+        if (!doctor) {
+            return fail(res, 404, 'No doctors available for the demo')
+        }
+
+        const token = jwt.sign({ id: doctor._id, role: 'doctor', demo: true }, process.env.JWT_SECRET, { expiresIn: '2h' })
+        res.json({ success: true, token })
+    } catch (error) {
+        serverError(res, error)
+    }
+}
+
 // API to get doctor appointments for doctor panel
 const appointmentsDoctor = async (req, res) => {
     try {
@@ -40,7 +72,7 @@ const appointmentsDoctor = async (req, res) => {
         const { docId } = req.body
         const appointments = await appointmentModel.find({ docId })
 
-        res.json({ success: true, appointments })
+        res.json({ success: true, appointments: req.isDemo ? maskAppointments(appointments) : appointments })
 
     } catch (error) {
         serverError(res, error)
@@ -122,7 +154,7 @@ const doctorProfile = async (req, res) => {
         const { docId } = req.body
         const profileData = await doctorModel.findById(docId).select('-password')
 
-        res.json({ success: true, profileData })
+        res.json({ success: true, profileData: req.isDemo ? maskDoctor(profileData) : profileData })
 
     } catch (error) {
         serverError(res, error)
@@ -185,7 +217,7 @@ const doctorDashboard = async (req, res) => {
             earningsCash,
             appointments,
             patients: patientIds.length,
-            latestAppointments
+            latestAppointments: req.isDemo ? maskAppointments(latestAppointments) : latestAppointments
         }
 
         res.json({ success: true, dashData })
@@ -197,6 +229,7 @@ const doctorDashboard = async (req, res) => {
 
 export {
     loginDoctor,
+    demoLoginDoctor,
     appointmentsDoctor,
     appointmentCancel,
     doctorList,

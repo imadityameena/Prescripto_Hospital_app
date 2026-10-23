@@ -2,11 +2,12 @@
 
 Prescripto is a MERN-stack app for booking doctor appointments. Patients browse doctors and book time slots, doctors manage their appointments, and an admin manages doctors and bookings.
 
-## Live links
+## Live demo
 
-- Patient site: https://prescripto-hospital-app.vercel.app
-- Admin / doctor panel: https://prescripto-hospital-app-pxla.vercel.app
-- Backend API: https://prescripto-hospital-backend.vercel.app
+**https://prescripto-hospital-app.vercel.app**
+
+- Patients can sign up and book appointments.
+- Doctor and admin dashboards: click **Staff login** on the login page (or in the footer), then **Try admin demo** or **Try doctor demo**. Demo sessions are read-only and hide patients' personal details.
 
 ## Features
 
@@ -86,6 +87,7 @@ Create a `.env` file in each folder. These files are ignored by git — never co
 | `RAZORPAY_KEY_SECRET` | Razorpay key secret |
 | `STRIPE_SECRET_KEY` | Stripe secret key |
 | `SEED_DOCTOR_PASSWORD` | Only needed for `npm run seed:doctors` |
+| `DEMO_DOCTOR_EMAIL` | Optional. Doctor used by "Try doctor demo" (default: the doctor with the most appointments) |
 
 **admin/.env**
 
@@ -93,12 +95,14 @@ Create a `.env` file in each folder. These files are ignored by git — never co
 |---|---|
 | `VITE_BACKEND_URL` | Backend URL, e.g. `http://localhost:4000` |
 | `VITE_CURRENCY` | Currency symbol shown in the panel, e.g. `₹` |
+| `VITE_PATIENT_URL` | Optional. Patient site URL for the "Go to the patient site" link |
 
 **frontend/.env**
 
 | Variable | Description |
 |---|---|
 | `VITE_RAZORPAY_KEY_ID` | Razorpay key id (same as the backend's) |
+| `VITE_ADMIN_URL` | Optional. Admin panel URL for the "Staff login" links, e.g. `http://localhost:5174` locally |
 
 ### 3. (Optional) Add sample doctors
 
@@ -124,7 +128,8 @@ If a port is busy, Vite picks the next free one; the backend accepts any `localh
 ### Logging in
 - **Patients** sign up on the patient site.
 - **Admin** logs in on the admin panel with `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
-- **Doctors** log in on the admin panel (click "Doctor Login") with the email and password set when the doctor was added.
+- **Doctors** log in on the admin panel (choose "Doctor") with the email and password set when the doctor was added.
+- **Anyone** can use the read-only admin/doctor demo from the admin panel's login page.
 
 ## Deployment
 
