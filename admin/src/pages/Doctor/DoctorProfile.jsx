@@ -3,6 +3,7 @@ import { DoctorContext } from '../../context/DoctorContext'
 import { AppContext } from '../../context/AppContext'
 import { toast } from 'react-toastify'
 import axios from 'axios'
+import { optimizeImage } from '../../utils/image'
 
 const DoctorProfile = () => {
 
@@ -50,7 +51,7 @@ const DoctorProfile = () => {
         <div>
             <div className='flex flex-col gap-4 m-5'>
                 <div>
-                    <img className='bg-primary/80 w-full sm:max-w-64 rounded-lg' src={profileData.image} alt="" />
+                    <img className='bg-primary/80 w-full sm:max-w-64 rounded-lg' src={optimizeImage(profileData.image, 500)} alt="" />
                 </div>
 
                 <div className='flex-1 border border-stone-100 rounded-lg p-8 py-7 bg-white'>

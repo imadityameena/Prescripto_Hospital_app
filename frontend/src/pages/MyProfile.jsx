@@ -3,6 +3,7 @@ import { AppContext } from '../context/AppContext'
 import axios from 'axios'
 import { toast } from 'react-toastify'
 import { assets } from '../assets/assets'
+import { optimizeImage } from '../utils/image'
 
 const MyProfile = () => {
 
@@ -56,7 +57,7 @@ const MyProfile = () => {
                     </div>
                     <input onChange={(e) => setImage(e.target.files[0])} type="file" id="image" accept="image/*" hidden />
                 </label>
-                : <img className='w-36 rounded' src={userData.image} alt="" />
+                : <img className='w-36 rounded' src={optimizeImage(userData.image, 300)} alt="" />
             }
 
             {isEdit

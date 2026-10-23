@@ -4,6 +4,7 @@ import { AppContext } from '../context/AppContext'
 import axios from 'axios'
 import { toast } from 'react-toastify'
 import { assets } from '../assets/assets'
+import { optimizeImage } from '../utils/image'
 
 const MyAppointments = () => {
 
@@ -29,7 +30,7 @@ const MyAppointments = () => {
 
             const { data } = await axios.get(backendUrl + '/api/user/appointments', { headers: { token } })
             if (data.success) {
-                setAppointments(data.appointments.reverse())
+                setAppointments(data.appointments)
             } else {
                 toast.error(data.message)
             }
@@ -68,7 +69,19 @@ const MyAppointments = () => {
 
     }
 
-    const initPay = (order) => {
+    // Loads Razorpay's checkout script the first time it's needed,
+    // instead of on every page of the site
+    const loadRazorpay = () => new Promise((resolve, reject) => {
+        if (window.Razorpay) return resolve()
+        const script = document.createElement('script')
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+        script.onload = resolve
+        script.onerror = () => reject(new Error('Could not load Razorpay. Please check your connection.'))
+        document.body.appendChild(script)
+    })
+
+    const initPay = async (order) => {
+        await loadRazorpay()
         const options = {
             key: import.meta.env.VITE_RAZORPAY_KEY_ID,
             amount: order.amount,
@@ -103,7 +116,7 @@ const MyAppointments = () => {
         try {
             const { data } = await axios.post(backendUrl + '/api/user/payment-razorpay', { appointmentId }, { headers: { token } })
             if (data.success) {
-                initPay(data.order)
+                await initPay(data.order)
             }else{
                 toast.error(data.message)
             }
@@ -159,7 +172,7 @@ const MyAppointments = () => {
                 {appointments.map((item, index) => (
                     <div key={index} className='grid grid-cols-[1fr_2fr] gap-4 sm:flex sm:gap-6 py-4 border-b'>
                         <div>
-                            <img className='w-36 bg-[#EAEFFF]' src={item.docData.image} alt={item.docData.name} />
+                            <img className='w-36 bg-[#EAEFFF]' src={optimizeImage(item.docData.image, 300)} loading='lazy' decoding='async' alt={item.docData.name} />
                         </div>
                         <div className='flex-1 text-sm text-[#5E5E5E]'>
                             <p className='text-[#262626] text-base font-semibold'>{item.docData.name}</p>

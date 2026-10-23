@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useRef, useState } from 'react'
 import { assets } from '../assets/assets'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { AppContext } from '../context/AppContext'
+import { optimizeImage } from '../utils/image'
 
 const Navbar = () => {
 
@@ -72,7 +73,7 @@ const Navbar = () => {
                 aria-label='Account menu'
                 className='flex items-center gap-2 cursor-pointer'
               >
-                <img className='w-8 h-8 object-cover rounded-full' src={userData.image} alt='' />
+                <img className='w-8 h-8 object-cover rounded-full' src={optimizeImage(userData.image, 80)} alt='' />
                 <img className={`w-2.5 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} src={assets.dropdown_icon} alt='' />
               </button>
               {showProfileMenu && (

@@ -4,6 +4,19 @@ import axios from 'axios'
 
 export const AppContext = createContext()
 
+// The doctor list is kept in the browser so returning visitors see it instantly;
+// a fresh copy is still fetched in the background on every visit.
+const DOCTORS_CACHE_KEY = 'doctorsCache'
+
+const readCachedDoctors = () => {
+    try {
+        const cached = JSON.parse(localStorage.getItem(DOCTORS_CACHE_KEY))
+        return Array.isArray(cached) ? cached : null
+    } catch {
+        return null
+    }
+}
+
 const AppContextProvider = (props) => {
 
     const currencySymbol = '₹'
@@ -12,8 +25,8 @@ const AppContextProvider = (props) => {
   : "https://prescripto-hospital-backend.vercel.app"; // Deployed
 
 
-    const [doctors, setDoctors] = useState([])
-    const [doctorsLoading, setDoctorsLoading] = useState(true)
+    const [doctors, setDoctors] = useState(() => readCachedDoctors() || [])
+    const [doctorsLoading, setDoctorsLoading] = useState(() => !readCachedDoctors())
     const [token, setToken] = useState(localStorage.getItem('token') ? localStorage.getItem('token') : '')
     const [userData, setUserData] = useState(false)
 
@@ -25,6 +38,7 @@ const AppContextProvider = (props) => {
             const { data } = await axios.get(backendUrl + '/api/doctor/list')
             if (data.success) {
                 setDoctors(data.doctors)
+                try { localStorage.setItem(DOCTORS_CACHE_KEY, JSON.stringify(data.doctors)) } catch { /* storage full or blocked */ }
             } else {
                 toast.error(data.message)
             }

@@ -43,7 +43,7 @@ const demoLoginAdmin = async (req, res) => {
 const appointmentsAdmin = async (req, res) => {
     try {
 
-        const appointments = await appointmentModel.find({})
+        const appointments = await appointmentModel.find({}).sort({ date: -1 }).lean()
         res.json({ success: true, appointments: req.isDemo ? maskAppointments(appointments) : appointments })
 
     } catch (error) {

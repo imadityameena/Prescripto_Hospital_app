@@ -70,7 +70,7 @@ const appointmentsDoctor = async (req, res) => {
     try {
 
         const { docId } = req.body
-        const appointments = await appointmentModel.find({ docId })
+        const appointments = await appointmentModel.find({ docId }).sort({ date: -1 }).lean()
 
         res.json({ success: true, appointments: req.isDemo ? maskAppointments(appointments) : appointments })
 
@@ -123,7 +123,11 @@ const appointmentComplete = async (req, res) => {
 const doctorList = async (req, res) => {
     try {
 
-        const doctors = await doctorModel.find({}).select(['-password', '-email'])
+        const doctors = await doctorModel.find({}).select(['-password', '-email']).lean()
+
+        // Let Vercel's CDN reuse this response for a few seconds, so most visitors
+        // don't wait for the database. Kept short because it includes booked slots.
+        res.set('Cache-Control', 'public, max-age=0, s-maxage=10, stale-while-revalidate=60')
         res.json({ success: true, doctors })
 
     } catch (error) {

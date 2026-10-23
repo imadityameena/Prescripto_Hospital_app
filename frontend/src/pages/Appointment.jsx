@@ -5,6 +5,7 @@ import { assets } from '../assets/assets'
 import RelatedDoctors from '../components/RelatedDoctors'
 import axios from 'axios'
 import { toast } from 'react-toastify'
+import { optimizeImage } from '../utils/image'
 
 const Appointment = () => {
 
@@ -152,7 +153,7 @@ const Appointment = () => {
             {/* ---------- Doctor Details ----------- */}
             <div className='flex flex-col sm:flex-row gap-4'>
                 <div>
-                    <img className='bg-primary w-full sm:max-w-72 rounded-lg' src={docInfo.image} alt={docInfo.name} />
+                    <img className='bg-primary w-full sm:max-w-72 rounded-lg' src={optimizeImage(docInfo.image, 600)} alt={docInfo.name} />
                 </div>
 
                 <div className='flex-1 border border-[#ADADAD] rounded-lg p-8 py-7 bg-white mx-2 sm:mx-0 mt-[-80px] sm:mt-0'>

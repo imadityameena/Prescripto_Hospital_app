@@ -14,5 +14,10 @@ const appointmentSchema = new mongoose.Schema({
     isCompleted: { type: Boolean, default: false }
 })
 
+// Speeds up "appointments for this doctor / this patient, newest first" and the dashboards
+appointmentSchema.index({ docId: 1, date: -1 })
+appointmentSchema.index({ userId: 1, date: -1 })
+appointmentSchema.index({ date: -1 })
+
 const appointmentModel = mongoose.models.appointment || mongoose.model("appointment", appointmentSchema)
 export default appointmentModel

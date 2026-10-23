@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { AppContext } from '../context/AppContext'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { optimizeImage } from '../utils/image'
 
 const Doctors = () => {
 
@@ -42,7 +43,7 @@ const Doctors = () => {
           {!doctorsLoading && filterDoc.length === 0 && <p className='col-span-full text-sm text-gray-500'>No doctors found for this speciality.</p>}
           {filterDoc.map((item, index) => (
             <Link to={`/appointment/${item._id}`} onClick={() => scrollTo(0, 0)} className='block border border-[#C9D8FF] rounded-xl overflow-hidden cursor-pointer hover:translate-y-[-10px] transition-all duration-500' key={item._id}>
-              <img className='bg-[#EAEFFF] w-full aspect-square object-cover object-top' src={item.image} alt={item.name} />
+              <img className='bg-[#EAEFFF] w-full aspect-square object-cover object-top' src={optimizeImage(item.image, 400)} loading='lazy' decoding='async' alt={item.name} />
               <div className='p-3 sm:p-4'>
                 <div className={`flex items-center gap-2 text-sm text-center ${item.available ? 'text-green-500' : "text-gray-500"}`}>
                   <p className={`w-2 h-2 rounded-full ${item.available ? 'bg-green-500' : "bg-gray-500"}`}></p><p>{item.available ? 'Available' : "Not Available"}</p>
