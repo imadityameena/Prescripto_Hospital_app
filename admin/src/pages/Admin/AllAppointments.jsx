@@ -3,12 +3,12 @@ import { assets } from '../../assets/assets'
 import { useContext } from 'react'
 import { AdminContext } from '../../context/AdminContext'
 import { AppContext } from '../../context/AppContext'
-import { optimizeImage } from '../../utils/image'
+import { Avatar } from '../../components/DashboardParts'
 
 const AllAppointments = () => {
 
   const { aToken, appointments, cancelAppointment, getAllAppointments } = useContext(AdminContext)
-  const { slotDateFormat, calculateAge, currency } = useContext(AppContext)
+  const { slotDateFormat, calculateAge, formatMoney } = useContext(AppContext)
 
   useEffect(() => {
     if (aToken) {
@@ -17,7 +17,7 @@ const AllAppointments = () => {
   }, [aToken])
 
   return (
-    <div className='w-full max-w-6xl m-5 '>
+    <div className='w-full max-w-6xl p-5'>
 
       <p className='mb-3 text-lg font-medium'>All Appointments</p>
 
@@ -35,14 +35,14 @@ const AllAppointments = () => {
           <div className='flex flex-wrap justify-between max-sm:gap-2 sm:grid sm:grid-cols-[0.5fr_3fr_1fr_3fr_3fr_1fr_1fr] items-center text-gray-500 py-3 px-6 border-b hover:bg-gray-50' key={index}>
             <p className='max-sm:hidden'>{index+1}</p>
             <div className='flex items-center gap-2'>
-              <img src={optimizeImage(item.userData.image, 64)} loading='lazy' decoding='async' className='w-8 rounded-full' alt="" /> <p>{item.userData.name}</p>
+              <Avatar src={item.userData.image} name={item.userData.name} size={32} /> <p>{item.userData.name}</p>
             </div>
             <p className='max-sm:hidden'>{calculateAge(item.userData.dob)}</p>
             <p>{slotDateFormat(item.slotDate)}, {item.slotTime}</p>
             <div className='flex items-center gap-2'>
-              <img src={optimizeImage(item.docData.image, 64)} loading='lazy' decoding='async' className='w-8 rounded-full bg-gray-200' alt="" /> <p>{item.docData.name}</p>
+              <Avatar src={item.docData.image} name={item.docData.name} size={32} /> <p>{item.docData.name}</p>
             </div>
-            <p>{currency}{item.amount}</p>
+            <p>{formatMoney(item.amount)}</p>
             {item.cancelled ? <p className='text-red-400 text-xs font-medium'>Cancelled</p> : item.isCompleted ? <p className='text-green-500 text-xs font-medium'>Completed</p> : <button type='button' onClick={() => cancelAppointment(item._id)} title='Cancel appointment' aria-label='Cancel appointment'><img className='w-10' src={assets.cancel_icon} alt='' /></button>}
           </div>
         ))}

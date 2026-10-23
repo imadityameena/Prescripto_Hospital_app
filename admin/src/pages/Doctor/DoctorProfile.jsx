@@ -8,7 +8,7 @@ import { optimizeImage } from '../../utils/image'
 const DoctorProfile = () => {
 
     const { dToken, profileData, setProfileData, getProfileData } = useContext(DoctorContext)
-    const { currency, backendUrl } = useContext(AppContext)
+    const { currency, formatMoney, backendUrl } = useContext(AppContext)
     const [isEdit, setIsEdit] = useState(false)
 
     const updateProfile = async () => {
@@ -77,7 +77,7 @@ const DoctorProfile = () => {
                     </div>
 
                     <p className='text-gray-600 font-medium mt-4'>
-                        Appointment fee: <span className='text-gray-800'>{currency} {isEdit ? <input className='w-24 border border-gray-300 rounded px-2 py-1 outline-primary' min='0' type='number' onChange={(e) => setProfileData(prev => ({ ...prev, fees: e.target.value }))} value={profileData.fees} /> : profileData.fees}</span>
+                        Appointment fee: <span className='text-gray-800'>{isEdit ? <>{currency} <input className='w-24 border border-gray-300 rounded px-2 py-1 outline-primary' min='0' type='number' onChange={(e) => setProfileData(prev => ({ ...prev, fees: e.target.value }))} value={profileData.fees} /></> : formatMoney(profileData.fees)}</span>
                     </p>
 
                     <div className='flex gap-2 py-2'>

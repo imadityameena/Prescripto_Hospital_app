@@ -3,12 +3,12 @@ import { useContext, useEffect } from 'react'
 import { DoctorContext } from '../../context/DoctorContext'
 import { AppContext } from '../../context/AppContext'
 import { assets } from '../../assets/assets'
-import { optimizeImage } from '../../utils/image'
+import { Avatar } from '../../components/DashboardParts'
 
 const DoctorAppointments = () => {
 
   const { dToken, appointments, getAppointments, cancelAppointment, completeAppointment } = useContext(DoctorContext)
-  const { slotDateFormat, calculateAge, currency } = useContext(AppContext)
+  const { slotDateFormat, calculateAge, formatMoney } = useContext(AppContext)
 
   useEffect(() => {
     if (dToken) {
@@ -17,7 +17,7 @@ const DoctorAppointments = () => {
   }, [dToken])
 
   return (
-    <div className='w-full max-w-6xl m-5 '>
+    <div className='w-full max-w-6xl p-5'>
 
       <p className='mb-3 text-lg font-medium'>All Appointments</p>
 
@@ -35,7 +35,7 @@ const DoctorAppointments = () => {
           <div className='flex flex-wrap justify-between max-sm:gap-5 max-sm:text-base sm:grid grid-cols-[0.5fr_2fr_1fr_1fr_3fr_1fr_1fr] gap-1 items-center text-gray-500 py-3 px-6 border-b hover:bg-gray-50' key={index}>
             <p className='max-sm:hidden'>{index}</p>
             <div className='flex items-center gap-2'>
-              <img src={optimizeImage(item.userData.image, 64)} loading='lazy' decoding='async' className='w-8 rounded-full' alt="" /> <p>{item.userData.name}</p>
+              <Avatar src={item.userData.image} name={item.userData.name} size={32} /> <p>{item.userData.name}</p>
             </div>
             <div>
               <p className='text-xs inline border border-primary px-2 rounded-full'>
@@ -44,7 +44,7 @@ const DoctorAppointments = () => {
             </div>
             <p className='max-sm:hidden'>{calculateAge(item.userData.dob)}</p>
             <p>{slotDateFormat(item.slotDate)}, {item.slotTime}</p>
-            <p>{currency}{item.amount}</p>
+            <p>{formatMoney(item.amount)}</p>
             {item.cancelled
               ? <p className='text-red-400 text-xs font-medium'>Cancelled</p>
               : item.isCompleted

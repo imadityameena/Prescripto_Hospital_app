@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { fail, serverError } from "../utils/respond.js";
 import { maskAppointments, maskDoctor } from "../utils/demo.js";
+import { slimAppointments } from "../utils/slim.js";
 import appointmentModel from "../models/appointmentModel.js";
 import doctorModel from "../models/doctorModel.js";
 import bcrypt from "bcrypt";
@@ -43,7 +44,7 @@ const demoLoginAdmin = async (req, res) => {
 const appointmentsAdmin = async (req, res) => {
     try {
 
-        const appointments = await appointmentModel.find({}).sort({ date: -1 }).lean()
+        const appointments = slimAppointments(await appointmentModel.find({}).sort({ date: -1 }).lean())
         res.json({ success: true, appointments: req.isDemo ? maskAppointments(appointments) : appointments })
 
     } catch (error) {
@@ -163,7 +164,7 @@ const adminDashboard = async (req, res) => {
             doctorModel.countDocuments(),
             userModel.countDocuments(),
             appointmentModel.countDocuments(),
-            appointmentModel.find({}).sort({ date: -1 }).limit(5).lean(),
+            appointmentModel.find({}).sort({ date: -1 }).limit(5).lean().then(slimAppointments),
         ])
 
         const dashData = {

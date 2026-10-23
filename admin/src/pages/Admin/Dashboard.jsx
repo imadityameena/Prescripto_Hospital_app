@@ -1,13 +1,14 @@
 import React, { useContext, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { assets } from '../../assets/assets'
 import { AdminContext } from '../../context/AdminContext'
 import { AppContext } from '../../context/AppContext'
-import { optimizeImage } from '../../utils/image'
+import { StatCard, StatusBadge, Avatar, Panel, PageLoader } from '../../components/DashboardParts'
 
 const Dashboard = () => {
 
   const { aToken, getDashData, cancelAppointment, dashData } = useContext(AdminContext)
-  const { slotDateFormat } = useContext(AppContext)
+  const { slotDateFormat, formatMoney } = useContext(AppContext)
 
   useEffect(() => {
     if (aToken) {
@@ -15,51 +16,49 @@ const Dashboard = () => {
     }
   }, [aToken])
 
-  return dashData && (
-    <div className='m-5'>
+  if (!dashData) return <PageLoader />
 
-      <div className='flex flex-wrap gap-3'>
-        <div className='flex items-center gap-2 bg-white p-4 min-w-52 rounded border-2 border-gray-100 cursor-pointer hover:scale-105 transition-all'>
-          <img className='w-14' src={assets.doctor_icon} alt="" />
-          <div>
-            <p className='text-xl font-semibold text-gray-600'>{dashData.doctors}</p>
-            <p className='text-gray-400'>Doctors</p>
-          </div>
-        </div>
-        <div className='flex items-center gap-2 bg-white p-4 min-w-52 rounded border-2 border-gray-100 cursor-pointer hover:scale-105 transition-all'>
-          <img className='w-14' src={assets.appointments_icon} alt="" />
-          <div>
-            <p className='text-xl font-semibold text-gray-600'>{dashData.appointments}</p>
-            <p className='text-gray-400'>Appointments</p>
-          </div>
-        </div>
-        <div className='flex items-center gap-2 bg-white p-4 min-w-52 rounded border-2 border-gray-100 cursor-pointer hover:scale-105 transition-all'>
-          <img className='w-14' src={assets.patients_icon} alt="" />
-          <div>
-            <p className='text-xl font-semibold text-gray-600'>{dashData.patients}</p>
-            <p className='text-gray-400'>Patients</p></div>
-        </div>
+  return (
+    <div className='w-full max-w-6xl p-5 flex flex-col gap-6'>
+
+      <h1 className='text-lg font-medium text-gray-800'>Dashboard</h1>
+
+      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+        <StatCard to='/doctor-list' icon={assets.doctor_icon} value={dashData.doctors} label='Doctors' />
+        <StatCard to='/all-appointments' icon={assets.appointments_icon} value={dashData.appointments} label='Appointments' />
+        <StatCard to='/all-appointments' icon={assets.patients_icon} value={dashData.patients} label='Patients' />
       </div>
 
-      <div className='bg-white'>
-        <div className='flex items-center gap-2.5 px-4 py-4 mt-10 rounded-t border'>
-          <img src={assets.list_icon} alt="" />
-          <p className='font-semibold'>Latest Bookings</p>
-        </div>
+      <Panel
+        icon={assets.list_icon}
+        title='Latest bookings'
+        action={<Link to='/all-appointments' className='text-sm text-primary hover:underline'>View all</Link>}
+      >
+        {dashData.latestAppointments.length === 0 && (
+          <p className='px-5 py-10 text-center text-sm text-gray-500'>No bookings yet.</p>
+        )}
 
-        <div className='pt-4 border border-t-0'>
-          {dashData.latestAppointments.slice(0, 5).map((item, index) => (
-            <div className='flex items-center px-6 py-3 gap-3 hover:bg-gray-100' key={index}>
-              <img className='rounded-full w-10' src={optimizeImage(item.docData.image, 80)} loading='lazy' decoding='async' alt="" />
-              <div className='flex-1 text-sm'>
-                <p className='text-gray-800 font-medium'>{item.docData.name}</p>
-                <p className='text-gray-600 '>Booking on {slotDateFormat(item.slotDate)}</p>
+        <ul className='divide-y divide-gray-100'>
+          {dashData.latestAppointments.map((item) => (
+            <li className='flex items-center gap-3 px-5 py-3 hover:bg-gray-50' key={item._id}>
+              <Avatar src={item.docData.image} name={item.docData.name} />
+              <div className='flex-1 min-w-0 text-sm'>
+                <p className='text-gray-800 font-medium truncate'>{item.docData.name}</p>
+                <p className='text-gray-500 truncate'>
+                  {item.userData.name} · {slotDateFormat(item.slotDate)} · {item.slotTime}
+                </p>
               </div>
-              {item.cancelled ? <p className='text-red-400 text-xs font-medium'>Cancelled</p> : item.isCompleted ? <p className='text-green-500 text-xs font-medium'>Completed</p> : <button type='button' onClick={() => cancelAppointment(item._id)} title='Cancel appointment' aria-label='Cancel appointment'><img className='w-10' src={assets.cancel_icon} alt='' /></button>}
-            </div>
+              <span className='hidden sm:block text-sm text-gray-600 w-20 text-right'>{formatMoney(item.amount)}</span>
+              <StatusBadge item={item} />
+              {!item.cancelled && !item.isCompleted && (
+                <button type='button' onClick={() => cancelAppointment(item._id)} title='Cancel appointment' aria-label='Cancel appointment'>
+                  <img className='w-9' src={assets.cancel_icon} alt='' />
+                </button>
+              )}
+            </li>
           ))}
-        </div>
-      </div>
+        </ul>
+      </Panel>
 
     </div>
   )

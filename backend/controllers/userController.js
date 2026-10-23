@@ -272,7 +272,7 @@ const listAppointment = async (req, res) => {
     try {
 
         const { userId } = req.body
-        const appointments = await appointmentModel.find({ userId }).sort({ date: -1 }).lean()
+        const appointments = await appointmentModel.find({ userId }).select('-userData').sort({ date: -1 }).lean()
 
         res.json({ success: true, appointments })
 

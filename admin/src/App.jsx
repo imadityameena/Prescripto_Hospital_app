@@ -28,19 +28,22 @@ const App = () => {
       <Navbar />
       <div className='flex items-start'>
         <Sidebar />
-        <Suspense fallback={<div className='flex-1 min-h-[60vh] flex items-center justify-center'><div className='w-10 h-10 border-4 border-gray-200 border-t-primary rounded-full animate-spin' /></div>}>
-        <Routes>
-            <Route path='/' element={<Navigate to={aToken ? '/admin-dashboard' : '/doctor-dashboard'} replace />} />
-            <Route path='/admin-dashboard' element={<Dashboard />} />
-            <Route path='/all-appointments' element={<AllAppointments />} />
-            <Route path='/add-doctor' element={<AddDoctor />} />
-            <Route path='/doctor-list' element={<DoctorsList />} />
-            <Route path='/doctor-dashboard' element={<DoctorDashboard />} />
-            <Route path='/doctor-appointments' element={<DoctorAppointments />} />
-            <Route path='/doctor-profile' element={<DoctorProfile />} />
-            <Route path='*' element={<Navigate to='/' replace />} />
-        </Routes>
-      </Suspense>
+        {/* page area takes the space left next to the sidebar */}
+        <main className='flex-1 min-w-0'>
+          <Suspense fallback={<div className='flex-1 min-h-[60vh] flex items-center justify-center'><div className='w-10 h-10 border-4 border-gray-200 border-t-primary rounded-full animate-spin' /></div>}>
+            <Routes>
+              <Route path='/' element={<Navigate to={aToken ? '/admin-dashboard' : '/doctor-dashboard'} replace />} />
+              <Route path='/admin-dashboard' element={<Dashboard />} />
+              <Route path='/all-appointments' element={<AllAppointments />} />
+              <Route path='/add-doctor' element={<AddDoctor />} />
+              <Route path='/doctor-list' element={<DoctorsList />} />
+              <Route path='/doctor-dashboard' element={<DoctorDashboard />} />
+              <Route path='/doctor-appointments' element={<DoctorAppointments />} />
+              <Route path='/doctor-profile' element={<DoctorProfile />} />
+              <Route path='*' element={<Navigate to='/' replace />} />
+            </Routes>
+          </Suspense>
+        </main>
       </div>
     </div>
   ) : (

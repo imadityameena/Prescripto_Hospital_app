@@ -3,11 +3,11 @@ import { loginAdmin, demoLoginAdmin, appointmentsAdmin, appointmentCancel, addDo
 import { changeAvailablity } from '../controllers/doctorController.js';
 import authAdmin from '../middleware/authAdmin.js';
 import uploadImage from '../middleware/multer.js';
-import authLimiter from '../middleware/rateLimit.js';
+import authLimiter, { demoLimiter } from '../middleware/rateLimit.js';
 const adminRouter = express.Router();
 
 adminRouter.post("/login", authLimiter, loginAdmin)
-adminRouter.post("/demo-login", authLimiter, demoLoginAdmin)
+adminRouter.post("/demo-login", demoLimiter, demoLoginAdmin)
 adminRouter.post("/add-doctor", authAdmin, uploadImage('image'), addDoctor)
 adminRouter.get("/appointments", authAdmin, appointmentsAdmin)
 adminRouter.post("/cancel-appointment", authAdmin, appointmentCancel)

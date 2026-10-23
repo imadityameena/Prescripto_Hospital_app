@@ -6,6 +6,7 @@ import appointmentModel from "../models/appointmentModel.js";
 import { cancelAndReleaseSlot } from "../utils/slots.js";
 import { parseAddress } from "../utils/upload.js";
 import { maskAppointments, maskDoctor } from "../utils/demo.js";
+import { slimAppointments } from "../utils/slim.js";
 
 // API for doctor Login 
 const loginDoctor = async (req, res) => {
@@ -70,7 +71,7 @@ const appointmentsDoctor = async (req, res) => {
     try {
 
         const { docId } = req.body
-        const appointments = await appointmentModel.find({ docId }).sort({ date: -1 }).lean()
+        const appointments = slimAppointments(await appointmentModel.find({ docId }).sort({ date: -1 }).lean())
 
         res.json({ success: true, appointments: req.isDemo ? maskAppointments(appointments) : appointments })
 
@@ -209,7 +210,7 @@ const doctorDashboard = async (req, res) => {
                 { $match: { docId, cancelled: false, $or: [{ isCompleted: true }, { payment: true }] } },
                 { $group: { _id: '$payment', total: { $sum: '$amount' } } },
             ]),
-            appointmentModel.find({ docId }).sort({ date: -1 }).limit(5).lean(),
+            appointmentModel.find({ docId }).sort({ date: -1 }).limit(5).lean().then(slimAppointments),
         ])
 
         const earningsOnline = earningsResult.find(r => r._id === true)?.total || 0
