@@ -15,7 +15,7 @@ const isValidGender = (gender) => GENDERS.includes(gender)
 const isValidDob = (dob, { allowUnset = false } = {}) => {
     if (allowUnset && dob === 'Not Selected') return true
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dob || '')) return false
-    const date = new Date(dob + 'T00:00:00')
+    const date = new Date(dob + 'T00:00:00Z') // UTC, so the timezone can't shift the day
     if (isNaN(date) || date.toISOString().slice(0, 10) !== dob) return false
     const now = new Date()
     const oldest = new Date(now.getFullYear() - 120, now.getMonth(), now.getDate())

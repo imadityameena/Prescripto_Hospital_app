@@ -40,9 +40,16 @@ const registerUser = async (req, res) => {
         const { name, password, phone, address, gender, dob } = req.body;
         const email = String(req.body.email || '').trim().toLowerCase()
 
-        // checking for all data to register user
-        if (!name?.trim() || !email || !password || !phone || !address || !gender || !dob) {
-            return fail(res, 400, 'Please fill in all required details')
+        // checking for all data to register user, and saying exactly what is missing
+        const required = { name: name?.trim(), email, password, phone, address, gender, dob }
+        const labels = { name: 'full name', email: 'email', password: 'password', phone: 'mobile number', address: 'address', gender: 'gender', dob: 'date of birth' }
+        const missing = Object.keys(required).filter((key) => !required[key])
+        if (missing.length) {
+            return res.status(400).json({
+                success: false,
+                message: `Please add your ${missing.map((key) => labels[key]).join(', ')}`,
+                missing,
+            })
         }
 
         // validating email format

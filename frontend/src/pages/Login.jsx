@@ -7,6 +7,10 @@ import { assets } from '../assets/assets'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const ADMIN_SITE = import.meta.env.VITE_ADMIN_URL || 'https://prescripto-hospital-app-pxla.vercel.app'
+// field names the server may report as missing on sign-up
+const MISSING_LABELS = { name: 'full name', email: 'email', password: 'password', phone: 'mobile number', address: 'address', gender: 'gender', dob: 'date of birth' }
+const STEP_ONE_FIELDS = ['name', 'email', 'password']
+
 const TODAY = new Date().toISOString().slice(0, 10)
 const MAX_PHOTO_MB = 5
 
@@ -290,9 +294,17 @@ const Login = () => {
 
     } catch (error) {
       console.log(error)
+      const res = error.response?.data
       // an existing email is a step 1 problem, so take the user back there
       if (isSignUp && error.response?.status === 409) setStep(1)
-      setFormError(error.message)
+      // the server lists missing fields: mark each one and go to the step it is on
+      if (isSignUp && Array.isArray(res?.missing)) {
+        const fieldErrors = {}
+        res.missing.forEach((key) => { fieldErrors[key === 'address' ? 'line1' : key] = `Please add your ${MISSING_LABELS[key] || key}` })
+        if (res.missing.some((key) => STEP_ONE_FIELDS.includes(key))) setStep(1)
+        setErrors(fieldErrors)
+      }
+      setFormError(res?.message || error.message)
     } finally {
       setSubmitting(false)
     }

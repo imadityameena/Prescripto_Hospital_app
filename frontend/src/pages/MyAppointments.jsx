@@ -5,6 +5,24 @@ import axios from 'axios'
 import { toast } from 'react-toastify'
 import { assets } from '../assets/assets'
 import { optimizeImage } from '../utils/image'
+import { formatSlotDate, slotToDate, isPastSlot } from '../utils/format'
+import { PageHeader, Badge, Spinner, buttonPrimary } from '../components/ui'
+
+// which tab an appointment belongs to
+const groupOf = (item) => {
+    if (item.cancelled) return 'cancelled'
+    if (item.isCompleted || isPastSlot(item.slotDate)) return 'past'
+    return 'upcoming'
+}
+
+const TABS = [['upcoming', 'Upcoming'], ['past', 'Past'], ['cancelled', 'Cancelled']]
+
+const StatusBadge = ({ item }) => {
+    if (item.cancelled) return <Badge color='red'>Cancelled</Badge>
+    if (item.isCompleted) return <Badge color='green'>Completed</Badge>
+    if (isPastSlot(item.slotDate)) return <Badge>Past</Badge>
+    return <Badge color='blue'>Upcoming</Badge>
+}
 
 const MyAppointments = () => {
 
@@ -16,13 +34,7 @@ const MyAppointments = () => {
     const [payment, setPayment] = useState('')
     const [busyId, setBusyId] = useState('')   // appointment with a request in progress
 
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-    // Function to format the date eg. ( 20_1_2000 => 20 Jan 2000 )
-    const slotDateFormat = (slotDate) => {
-        const dateArray = slotDate.split('_')
-        return dateArray[0] + " " + months[Number(dateArray[1]) - 1] + " " + dateArray[2]
-    }
+    const [tab, setTab] = useState('upcoming')
 
     // Getting User Appointments Data Using API
     const getUserAppointments = async () => {
@@ -158,46 +170,119 @@ const MyAppointments = () => {
         }
     }, [token])
 
+    const counts = TABS.reduce((acc, [key]) => ({ ...acc, [key]: appointments.filter(a => groupOf(a) === key).length }), {})
+    const visible = appointments
+        .filter(a => groupOf(a) === tab)
+        // upcoming: soonest first; others: most recent first
+        .sort((a, b) => tab === 'upcoming' ? slotToDate(a.slotDate) - slotToDate(b.slotDate) : slotToDate(b.slotDate) - slotToDate(a.slotDate))
+
+    const actionButton = 'inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-wait'
+
     return (
-        <div>
-            <p className='pb-3 mt-12 text-lg font-medium text-gray-600 border-b'>My appointments</p>
-            {loading && <p className='py-10 text-center text-gray-500'>Loading your appointments...</p>}
+        <div className='pb-10'>
+            <PageHeader
+                title='My appointments'
+                subtitle='Track, pay for and manage your bookings.'
+                action={<button onClick={() => navigate('/doctors')} className={buttonPrimary}>Book new appointment</button>}
+            />
+
+            {loading && <Spinner />}
+
             {!loading && appointments.length === 0 && (
-                <div className='py-16 flex flex-col items-center gap-4 text-gray-500'>
-                    <p>You have no appointments yet.</p>
-                    <button onClick={() => navigate('/doctors')} className='bg-primary text-white px-8 py-2.5 rounded-full'>Find a doctor</button>
+                <div className='bg-white rounded-2xl border border-gray-200 py-16 px-6 flex flex-col items-center gap-3 text-center'>
+                    <p className='text-lg font-medium text-[#262626]'>No appointments yet</p>
+                    <p className='text-gray-500 text-sm'>Find a doctor and book your first visit in a minute.</p>
+                    <button onClick={() => navigate('/doctors')} className={`${buttonPrimary} mt-2`}>Find a doctor</button>
                 </div>
             )}
-            <div className=''>
-                {appointments.map((item, index) => (
-                    <div key={index} className='grid grid-cols-[1fr_2fr] gap-4 sm:flex sm:gap-6 py-4 border-b'>
-                        <div>
-                            <img className='w-36 bg-[#EAEFFF]' src={optimizeImage(item.docData.image, 300)} loading='lazy' decoding='async' alt={item.docData.name} />
-                        </div>
-                        <div className='flex-1 text-sm text-[#5E5E5E]'>
-                            <p className='text-[#262626] text-base font-semibold'>{item.docData.name}</p>
-                            <p>{item.docData.speciality}</p>
-                            <p className='text-[#464646] font-medium mt-1'>Address:</p>
-                            <p className=''>{item.docData.address.line1}</p>
-                            <p className=''>{item.docData.address.line2}</p>
-                            <p className=' mt-1'><span className='text-sm text-[#3C3C3C] font-medium'>Date & Time:</span> {slotDateFormat(item.slotDate)} |  {item.slotTime}</p>
-                        </div>
-                        <div></div>
-                        <div className='flex flex-col gap-2 justify-end text-sm text-center'>
-                            {!item.cancelled && !item.payment && !item.isCompleted && payment !== item._id && <button onClick={() => setPayment(item._id)} className='text-[#696969] sm:min-w-48 py-2 border rounded hover:bg-primary hover:text-white transition-all duration-300'>Pay Online</button>}
-                            {!item.cancelled && !item.payment && !item.isCompleted && payment === item._id && <button disabled={busyId === item._id} onClick={() => appointmentStripe(item._id)} className='text-[#696969] sm:min-w-48 py-2 border rounded hover:bg-gray-100 hover:text-white transition-all duration-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-wait'><img className='max-w-20 max-h-5' src={assets.stripe_logo} alt='Pay with Stripe' /></button>}
-                            {!item.cancelled && !item.payment && !item.isCompleted && payment === item._id && <button disabled={busyId === item._id} onClick={() => appointmentRazorpay(item._id)} className='text-[#696969] sm:min-w-48 py-2 border rounded hover:bg-gray-100 hover:text-white transition-all duration-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-wait'><img className='max-w-20 max-h-5' src={assets.razorpay_logo} alt='Pay with Razorpay' /></button>}
-                            {!item.cancelled && item.payment && !item.isCompleted && <p className='sm:min-w-48 py-2 border rounded text-[#696969]  bg-[#EAEFFF]'>Paid</p>}
 
-                            {item.isCompleted && <p className='sm:min-w-48 py-2 border border-green-500 rounded text-green-500'>Completed</p>}
-                            {!item.cancelled && !item.isCompleted && item.payment && <p className='sm:min-w-48 max-w-48 text-xs text-gray-500'>To cancel a paid appointment, please contact the clinic.</p>}
-
-                            {!item.cancelled && !item.isCompleted && !item.payment && <button disabled={busyId === item._id} onClick={() => cancelAppointment(item._id)} className='disabled:opacity-50 disabled:cursor-wait text-[#696969] sm:min-w-48 py-2 border rounded hover:bg-red-600 hover:text-white transition-all duration-300'>Cancel appointment</button>}
-                            {item.cancelled && !item.isCompleted && <p className='sm:min-w-48 py-2 border border-red-500 rounded text-red-500'>Appointment cancelled</p>}
-                        </div>
+            {!loading && appointments.length > 0 && (
+                <>
+                    {/* tabs */}
+                    <div className='flex gap-2 mb-5 overflow-x-auto' role='tablist'>
+                        {TABS.map(([key, label]) => (
+                            <button key={key} role='tab' aria-selected={tab === key} onClick={() => setTab(key)}
+                                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap border transition-colors ${tab === key ? 'bg-primary text-white border-primary' : 'bg-white text-gray-600 border-gray-200 hover:border-primary/40'}`}>
+                                {label} <span className={tab === key ? 'text-white/80' : 'text-gray-400'}>({counts[key]})</span>
+                            </button>
+                        ))}
                     </div>
-                ))}
-            </div>
+
+                    {visible.length === 0 && (
+                        <p className='bg-white rounded-2xl border border-gray-200 py-12 text-center text-gray-500 text-sm'>
+                            No {tab} appointments.
+                        </p>
+                    )}
+
+                    <ul className='flex flex-col gap-4'>
+                        {visible.map((item) => {
+                            const date = slotToDate(item.slotDate)
+                            const canPay = !item.cancelled && !item.payment && !item.isCompleted && !isPastSlot(item.slotDate)
+                            const canCancel = !item.cancelled && !item.isCompleted && !item.payment && !isPastSlot(item.slotDate)
+                            const busy = busyId === item._id
+
+                            return (
+                                <li key={item._id} className='bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden'>
+                                    <div className='flex flex-col sm:flex-row'>
+
+                                        {/* date block */}
+                                        <div className={`flex sm:flex-col items-center justify-center gap-2 sm:gap-0 px-5 py-3 sm:py-5 sm:w-28 shrink-0 ${groupOf(item) === 'upcoming' ? 'bg-primary text-white' : 'bg-gray-50 text-gray-500'}`}>
+                                            <span className='text-sm uppercase tracking-wide'>{date.toLocaleDateString('en-IN', { weekday: 'short' })}</span>
+                                            <span className='text-3xl font-semibold leading-none sm:my-1'>{date.getDate()}</span>
+                                            <span className='text-sm'>{date.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</span>
+                                        </div>
+
+                                        {/* details */}
+                                        <div className='flex-1 p-5 flex flex-col md:flex-row gap-5'>
+                                            <div className='flex gap-4 flex-1 min-w-0'>
+                                                <img className='w-16 h-16 rounded-full object-cover object-top bg-[#EAEFFF] shrink-0' src={optimizeImage(item.docData.image, 160)} loading='lazy' decoding='async' alt={item.docData.name} />
+                                                <div className='min-w-0 text-sm'>
+                                                    <div className='flex flex-wrap items-center gap-2'>
+                                                        <p className='text-[#262626] text-base font-semibold'>{item.docData.name}</p>
+                                                        <StatusBadge item={item} />
+                                                        {item.payment && !item.cancelled && <Badge color='green'>Paid</Badge>}
+                                                    </div>
+                                                    <p className='text-gray-500'>{item.docData.speciality}</p>
+                                                    <p className='mt-2 text-[#262626]'>
+                                                        <span className='font-medium'>{item.slotTime}</span>
+                                                        <span className='text-gray-400'> · {formatSlotDate(item.slotDate)} · ₹{item.amount}</span>
+                                                    </p>
+                                                    <p className='text-gray-500 mt-0.5'>{[item.docData.address?.line1, item.docData.address?.line2].filter(Boolean).join(', ')}</p>
+                                                </div>
+                                            </div>
+
+                                            {/* actions */}
+                                            <div className='flex flex-row md:flex-col flex-wrap gap-2 md:w-48 md:justify-center'>
+                                                {canPay && payment !== item._id && (
+                                                    <button onClick={() => setPayment(item._id)} className={`${actionButton} bg-primary text-white border-primary hover:opacity-90`}>Pay online</button>
+                                                )}
+                                                {canPay && payment === item._id && (
+                                                    <>
+                                                        <button disabled={busy} onClick={() => appointmentStripe(item._id)} className={`${actionButton} border-gray-300 hover:bg-gray-50`}>
+                                                            <img className='h-5' src={assets.stripe_logo} alt='Pay with Stripe' />
+                                                        </button>
+                                                        <button disabled={busy} onClick={() => appointmentRazorpay(item._id)} className={`${actionButton} border-gray-300 hover:bg-gray-50`}>
+                                                            <img className='h-5' src={assets.razorpay_logo} alt='Pay with Razorpay' />
+                                                        </button>
+                                                    </>
+                                                )}
+                                                {canCancel && (
+                                                    <button disabled={busy} onClick={() => cancelAppointment(item._id)} className={`${actionButton} border-gray-300 text-gray-600 hover:border-red-300 hover:text-red-600 hover:bg-red-50`}>
+                                                        Cancel
+                                                    </button>
+                                                )}
+                                                {!item.cancelled && !item.isCompleted && item.payment && !isPastSlot(item.slotDate) && (
+                                                    <p className='text-xs text-gray-500 md:text-center'>To cancel a paid appointment, please contact the clinic.</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                            )
+                        })}
+                    </ul>
+                </>
+            )}
         </div>
     )
 }

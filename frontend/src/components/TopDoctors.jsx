@@ -1,35 +1,26 @@
 import React, { useContext } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { AppContext } from '../context/AppContext'
-import { optimizeImage } from '../utils/image'
+import DoctorCard, { DoctorCardSkeleton } from './DoctorCard'
+
 const TopDoctors = () => {
 
     const navigate = useNavigate()
-
     const { doctors, doctorsLoading } = useContext(AppContext)
 
     return (
-        <div className='flex flex-col items-center gap-4 my-16 text-[#262626] md:mx-10'>
-            <h1 className='text-3xl font-medium'>Top Doctors to Book</h1>
-            <p className='sm:w-1/3 text-center text-sm'>Simply browse through our extensive list of trusted doctors.</p>
-            {doctorsLoading && <p className='pt-5 text-sm text-gray-500'>Loading doctors...</p>}
-            <div className='w-full grid grid-cols-auto-sm sm:grid-cols-auto gap-3 sm:gap-4 pt-5 gap-y-6 px-3 sm:px-0'>
-                {doctors.slice(0, 6).map((item, index) => (
-                    <Link to={`/appointment/${item._id}`} onClick={() => scrollTo(0, 0)} className='block border border-[#C9D8FF] rounded-xl overflow-hidden cursor-pointer hover:translate-y-[-10px] transition-all duration-500' key={item._id}>
-                        <img className='bg-[#EAEFFF] w-full aspect-square object-cover object-top' src={optimizeImage(item.image, 400)} loading='lazy' decoding='async' alt={item.name} />
-                        <div className='p-3 sm:p-4'>
-                            <div className={`flex items-center gap-2 text-sm text-center ${item.available ? 'text-green-500' : "text-gray-500"}`}>
-                                <p className={`w-2 h-2 rounded-full ${item.available ? 'bg-green-500' : "bg-gray-500"}`}></p><p>{item.available ? 'Available' : "Not Available"}</p>
-                            </div>
-                            <p className='text-[#262626] text-base sm:text-lg font-medium'>{item.name}</p>
-                            <p className='text-[#5C5C5C] text-sm'>{item.speciality}</p>
-                        </div>
-                    </Link>
-                ))}
+        <section className='flex flex-col items-center gap-3 my-16 text-[#262626] md:mx-10'>
+            <h2 className='text-3xl font-medium'>Top doctors to book</h2>
+            <p className='sm:w-1/2 text-center text-sm text-gray-500'>Experienced doctors across specialities, ready to see you this week.</p>
+            <div className='w-full grid grid-cols-auto-sm sm:grid-cols-auto gap-3 sm:gap-5 pt-5'>
+                {doctorsLoading && Array.from({ length: 5 }).map((_, i) => <DoctorCardSkeleton key={i} />)}
+                {doctors.slice(0, 10).map(doc => <DoctorCard key={doc._id} doctor={doc} />)}
             </div>
-            <button onClick={() => { navigate('/doctors'); scrollTo(0, 0) }} className='bg-[#EAEFFF] text-gray-600 px-12 py-3 rounded-full mt-10'>more</button>
-        </div>
-
+            <button onClick={() => { navigate('/doctors'); scrollTo(0, 0) }}
+                className='mt-8 px-10 py-3 rounded-full border border-primary text-primary text-sm font-medium hover:bg-primary hover:text-white transition-colors'>
+                View all doctors
+            </button>
+        </section>
     )
 }
 

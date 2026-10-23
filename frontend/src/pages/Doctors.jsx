@@ -1,60 +1,84 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useMemo, useState } from 'react'
 import { AppContext } from '../context/AppContext'
-import { Link, useNavigate, useParams } from 'react-router-dom'
-import { optimizeImage } from '../utils/image'
+import { useNavigate, useParams } from 'react-router-dom'
+import { specialityData } from '../assets/assets'
+import DoctorCard, { DoctorCardSkeleton } from '../components/DoctorCard'
+import { PageHeader, inputClass } from '../components/ui'
+import { plural } from '../utils/format'
 
 const Doctors = () => {
 
   const { speciality } = useParams()
-
-  const [filterDoc, setFilterDoc] = useState([])
-  const [showFilter, setShowFilter] = useState(false)
-  const navigate = useNavigate();
-
+  const navigate = useNavigate()
   const { doctors, doctorsLoading } = useContext(AppContext)
 
-  const applyFilter = () => {
-    if (speciality) {
-      setFilterDoc(doctors.filter(doc => doc.speciality === speciality))
-    } else {
-      setFilterDoc(doctors)
-    }
-  }
+  const [search, setSearch] = useState('')
+  const [availableOnly, setAvailableOnly] = useState(false)
 
-  useEffect(() => {
-    applyFilter()
-  }, [doctors, speciality])
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return doctors.filter(doc =>
+      (!speciality || doc.speciality === speciality) &&
+      (!availableOnly || doc.available) &&
+      (!q || doc.name.toLowerCase().includes(q) || doc.speciality.toLowerCase().includes(q))
+    )
+  }, [doctors, speciality, search, availableOnly])
+
+  const pill = (active) =>
+    `px-4 py-2 rounded-full text-sm whitespace-nowrap border transition-colors ${active ? 'bg-primary text-white border-primary' : 'bg-white text-gray-600 border-gray-200 hover:border-primary/40'}`
 
   return (
-    <div>
-      <p className='text-gray-600'>Browse through the doctors specialist.</p>
-      <div className='flex flex-col sm:flex-row items-start gap-5 mt-5'>
-        <button onClick={() => setShowFilter(!showFilter)} className={`py-1 px-3 border rounded text-sm  transition-all sm:hidden ${showFilter ? 'bg-primary text-white' : ''}`}>Filters</button>
-        <div className={`w-full sm:w-auto flex-col gap-4 text-sm text-gray-600 ${showFilter ? 'flex' : 'hidden sm:flex'}`}>
-          <button type='button' onClick={() => speciality === 'General physician' ? navigate('/doctors') : navigate('/doctors/General physician')} aria-pressed={speciality === 'General physician'} className={`text-left w-full sm:w-auto pl-3 py-1.5 pr-16 border border-gray-300 rounded transition-all cursor-pointer ${speciality === 'General physician' ? 'bg-[#E2E5FF] text-black ' : ''}`}>General physician</button>
-          <button type='button' onClick={() => speciality === 'Gynecologist' ? navigate('/doctors') : navigate('/doctors/Gynecologist')} aria-pressed={speciality === 'Gynecologist'} className={`text-left w-full sm:w-auto pl-3 py-1.5 pr-16 border border-gray-300 rounded transition-all cursor-pointer ${speciality === 'Gynecologist' ? 'bg-[#E2E5FF] text-black ' : ''}`}>Gynecologist</button>
-          <button type='button' onClick={() => speciality === 'Dermatologist' ? navigate('/doctors') : navigate('/doctors/Dermatologist')} aria-pressed={speciality === 'Dermatologist'} className={`text-left w-full sm:w-auto pl-3 py-1.5 pr-16 border border-gray-300 rounded transition-all cursor-pointer ${speciality === 'Dermatologist' ? 'bg-[#E2E5FF] text-black ' : ''}`}>Dermatologist</button>
-          <button type='button' onClick={() => speciality === 'Pediatricians' ? navigate('/doctors') : navigate('/doctors/Pediatricians')} aria-pressed={speciality === 'Pediatricians'} className={`text-left w-full sm:w-auto pl-3 py-1.5 pr-16 border border-gray-300 rounded transition-all cursor-pointer ${speciality === 'Pediatricians' ? 'bg-[#E2E5FF] text-black ' : ''}`}>Pediatricians</button>
-          <button type='button' onClick={() => speciality === 'Neurologist' ? navigate('/doctors') : navigate('/doctors/Neurologist')} aria-pressed={speciality === 'Neurologist'} className={`text-left w-full sm:w-auto pl-3 py-1.5 pr-16 border border-gray-300 rounded transition-all cursor-pointer ${speciality === 'Neurologist' ? 'bg-[#E2E5FF] text-black ' : ''}`}>Neurologist</button>
-          <button type='button' onClick={() => speciality === 'Gastroenterologist' ? navigate('/doctors') : navigate('/doctors/Gastroenterologist')} aria-pressed={speciality === 'Gastroenterologist'} className={`text-left w-full sm:w-auto pl-3 py-1.5 pr-16 border border-gray-300 rounded transition-all cursor-pointer ${speciality === 'Gastroenterologist' ? 'bg-[#E2E5FF] text-black ' : ''}`}>Gastroenterologist</button>
+    <div className='pb-10'>
+      <PageHeader
+        title={speciality ? plural(speciality) : 'Find a doctor'}
+        subtitle='Browse trusted doctors and book a visit in a minute.'
+      />
+
+      {/* search + availability */}
+      <div className='flex flex-col sm:flex-row gap-3 sm:items-center'>
+        <div className='relative flex-1'>
+          <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' className='w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 mt-0.5' aria-hidden='true'>
+            <circle cx='11' cy='11' r='8' /><path d='m21 21-4.3-4.3' />
+          </svg>
+          <label htmlFor='doctor-search' className='sr-only'>Search doctors</label>
+          <input id='doctor-search' type='search' placeholder='Search by name or speciality'
+            value={search} onChange={(e) => setSearch(e.target.value)} className={`${inputClass(false)} mt-0 pl-9`} />
         </div>
-        <div className='w-full grid grid-cols-auto-sm sm:grid-cols-auto gap-3 sm:gap-4 gap-y-6'>
-          {doctorsLoading && <p className='col-span-full text-sm text-gray-500'>Loading doctors...</p>}
-          {!doctorsLoading && filterDoc.length === 0 && <p className='col-span-full text-sm text-gray-500'>No doctors found for this speciality.</p>}
-          {filterDoc.map((item, index) => (
-            <Link to={`/appointment/${item._id}`} onClick={() => scrollTo(0, 0)} className='block border border-[#C9D8FF] rounded-xl overflow-hidden cursor-pointer hover:translate-y-[-10px] transition-all duration-500' key={item._id}>
-              <img className='bg-[#EAEFFF] w-full aspect-square object-cover object-top' src={optimizeImage(item.image, 400)} loading='lazy' decoding='async' alt={item.name} />
-              <div className='p-3 sm:p-4'>
-                <div className={`flex items-center gap-2 text-sm text-center ${item.available ? 'text-green-500' : "text-gray-500"}`}>
-                  <p className={`w-2 h-2 rounded-full ${item.available ? 'bg-green-500' : "bg-gray-500"}`}></p><p>{item.available ? 'Available' : "Not Available"}</p>
-                </div>
-                <p className='text-[#262626] text-base sm:text-lg font-medium'>{item.name}</p>
-                <p className='text-[#5C5C5C] text-sm'>{item.speciality}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <label className='flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none'>
+          <input type='checkbox' checked={availableOnly} onChange={(e) => setAvailableOnly(e.target.checked)} className='w-4 h-4 accent-primary' />
+          Available only
+        </label>
       </div>
+
+      {/* speciality filters */}
+      <div className='flex gap-2 mt-4 overflow-x-auto scroll-x' role='group' aria-label='Filter by speciality'>
+        <button type='button' aria-pressed={!speciality} onClick={() => navigate('/doctors')} className={pill(!speciality)}>All</button>
+        {specialityData.map(({ speciality: name }) => (
+          <button key={name} type='button' aria-pressed={speciality === name}
+            onClick={() => navigate(speciality === name ? '/doctors' : `/doctors/${name}`)}
+            className={pill(speciality === name)}>
+            {name}
+          </button>
+        ))}
+      </div>
+
+      {!doctorsLoading && (
+        <p className='text-sm text-gray-500 mt-4'>{filtered.length} {filtered.length === 1 ? 'doctor' : 'doctors'} found</p>
+      )}
+
+      <div className='mt-4 grid grid-cols-auto-sm sm:grid-cols-auto gap-3 sm:gap-5'>
+        {doctorsLoading && Array.from({ length: 8 }).map((_, i) => <DoctorCardSkeleton key={i} />)}
+        {filtered.map(doc => <DoctorCard key={doc._id} doctor={doc} />)}
+      </div>
+
+      {!doctorsLoading && filtered.length === 0 && (
+        <div className='bg-white rounded-2xl border border-gray-200 py-14 text-center'>
+          <p className='font-medium text-[#262626]'>No doctors match your search</p>
+          <button onClick={() => { setSearch(''); setAvailableOnly(false); navigate('/doctors') }} className='mt-2 text-primary text-sm hover:underline'>
+            Clear filters
+          </button>
+        </div>
+      )}
     </div>
   )
 }
