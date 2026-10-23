@@ -83,7 +83,10 @@ const Navbar = () => {
                 </div>
               )}
             </div>
-            : <button onClick={() => navigate('/login')} className='bg-primary text-white px-8 py-3 rounded-full font-light hidden md:block'>Create account</button>
+            : <div className='hidden md:flex items-center gap-4'>
+              <button onClick={() => navigate('/login')} className='font-medium text-gray-700 hover:text-primary'>Login</button>
+              <button onClick={() => navigate('/login?mode=signup')} className='bg-primary text-white px-8 py-3 rounded-full font-light'>Create account</button>
+            </div>
         }
         <button type='button' onClick={() => setShowMenu(true)} className='md:hidden' aria-label='Open menu'>
           <img className='w-6' src={assets.menu_icon} alt='' />

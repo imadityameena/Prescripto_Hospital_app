@@ -98,7 +98,7 @@ const Appointment = () => {
 
         if (!token) {
             toast.warning('Login to book appointment')
-            return navigate('/login')
+            return navigate('/login', { state: { from: `/appointment/${docId}` } })
         }
 
         if (!slotTime || !docSlots[slotIndex] || docSlots[slotIndex].length === 0) {

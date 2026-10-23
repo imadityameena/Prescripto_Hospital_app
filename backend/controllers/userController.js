@@ -7,6 +7,7 @@ import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
 import { uploadToCloudinary, parseAddress } from "../utils/upload.js";
 import { patientRedirectBase } from "../config/origins.js";
+import { isValidPhone, isValidGender, isValidDob, isStrongEnoughPassword } from "../utils/validate.js";
 import stripe from "stripe";
 import razorpay from 'razorpay';
 import { validateSlot, reserveSlot, releaseSlot, cancelAndReleaseSlot } from "../utils/slots.js";
@@ -26,15 +27,22 @@ const checkPayable = (appointmentData, userId) => {
     return null
 }
 
+// Matches an email without caring about upper/lower case
+// (older accounts may have been saved with capital letters)
+const emailQuery = (email) => ({
+    email: new RegExp(`^${email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')
+})
+
 // API to register user
 const registerUser = async (req, res) => {
 
     try {
-        const { name, email, password } = req.body;
+        const { name, password, phone, address, gender, dob } = req.body;
+        const email = String(req.body.email || '').trim().toLowerCase()
 
         // checking for all data to register user
-        if (!name || !email || !password) {
-            return fail(res, 400, 'Missing Details')
+        if (!name?.trim() || !email || !password || !phone || !address || !gender || !dob) {
+            return fail(res, 400, 'Please fill in all required details')
         }
 
         // validating email format
@@ -43,11 +51,28 @@ const registerUser = async (req, res) => {
         }
 
         // validating strong password
-        if (password.length < 8) {
-            return fail(res, 400, "Please enter a strong password")
+        if (!isStrongEnoughPassword(password)) {
+            return fail(res, 400, "Password must be at least 8 characters and include a letter and a number")
         }
 
-        if (await userModel.exists({ email })) {
+        if (!isValidPhone(phone)) {
+            return fail(res, 400, "Please enter a valid mobile number")
+        }
+
+        const parsedAddress = parseAddress(address)
+        if (!parsedAddress || !parsedAddress.line1.trim()) {
+            return fail(res, 400, "Please enter your address")
+        }
+
+        if (!isValidGender(gender)) {
+            return fail(res, 400, "Please select a valid gender")
+        }
+
+        if (!isValidDob(dob)) {
+            return fail(res, 400, "Please enter a valid date of birth")
+        }
+
+        if (await userModel.exists(emailQuery(email))) {
             return fail(res, 409, "An account with this email already exists")
         }
 
@@ -56,9 +81,13 @@ const registerUser = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, salt)
 
         const userData = {
-            name,
+            name: name.trim(),
             email,
             password: hashedPassword,
+            phone: String(phone).trim(),
+            address: parsedAddress,
+            gender,
+            dob,
         }
 
         const newUser = new userModel(userData)
@@ -76,8 +105,9 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
 
     try {
-        const { email, password } = req.body;
-        const user = await userModel.findOne({ email })
+        const { password } = req.body;
+        const email = String(req.body.email || '').trim()
+        const user = await userModel.findOne(emailQuery(email))
 
         if (!user) {
             return fail(res, 401, "Invalid credentials")
@@ -128,12 +158,16 @@ const updateProfile = async (req, res) => {
             return fail(res, 400, "Please enter a valid address")
         }
 
-        if (!/^[0-9+\-\s()]{7,20}$/.test(phone)) {
-            return fail(res, 400, "Please enter a valid phone number")
+        if (!isValidPhone(phone)) {
+            return fail(res, 400, "Please enter a valid mobile number")
         }
 
-        if (!['Male', 'Female', 'Not Selected'].includes(gender)) {
+        if (!isValidGender(gender)) {
             return fail(res, 400, "Please select a valid gender")
+        }
+
+        if (!isValidDob(dob, { allowUnset: true })) {
+            return fail(res, 400, "Please enter a valid date of birth")
         }
 
         const update = { name, phone, address: parsedAddress, dob, gender }

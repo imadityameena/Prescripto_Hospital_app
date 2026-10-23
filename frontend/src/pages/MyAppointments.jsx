@@ -141,7 +141,7 @@ const MyAppointments = () => {
             getUserAppointments()
         } else {
             toast.info('Please login to see your appointments')
-            navigate('/login')
+            navigate('/login', { state: { from: '/my-appointments' } })
         }
     }, [token])
 

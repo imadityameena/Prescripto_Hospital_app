@@ -100,6 +100,7 @@ const MyProfile = () => {
                             <option value="Not Selected">Not Selected</option>
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
+                            <option value="Other">Other</option>
                         </select>
                         : <p className='text-gray-500'>{userData.gender}</p>
                     }
